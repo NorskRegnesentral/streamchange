@@ -1,4 +1,4 @@
-from .segmentor import Segmentor
+from . import Segmentor
 
 import numpy as np
 from numba import njit
@@ -29,7 +29,7 @@ def univariate_cusum_tests_for(starts: np.ndarray, ends: np.ndarray, x: np.ndarr
     return tests, cpts
 
 
-class CusumSegmentor(Segmentor):
+class UnivariateCUSUM(Segmentor):
     def set_default_penalty(self, n: float):
         self.penalty = np.sqrt(2.0 * np.log(n))
 

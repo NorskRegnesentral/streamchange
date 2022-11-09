@@ -1,7 +1,7 @@
 from setuptools import setup
 
 setup(
-    name="segment-stream",
+    name="streamchange",
     version="0.1",
     author="Martin Tveten",
     author_email="tveten@nr.no",
@@ -12,12 +12,6 @@ setup(
     ),
     long_description="",
     long_description_content_type="text/markdown",
-    packages=["segment-stream"],
-    install_requires=[
-        "pandas",
-        "numpy",
-        "numba",
-        "scipy",
-        "copy",
-    ],
+    packages=["streamchange"],
+    install_requires=["pandas", "numpy", "numba", "scipy", "copy", "plotly"],
 )
