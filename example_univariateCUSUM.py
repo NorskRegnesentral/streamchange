@@ -12,7 +12,7 @@ df_test = df.loc[(2 * seg_len) : (3 * seg_len)]
 segmentor = UnivariateCUSUM(
     min_size_window=4, max_size_window=50, max_size_history=1000
 )
-tune = SimpleTuner(0.5, max_cpts=500, sampling_probability=1)
+tune = SimpleTuner(0.5, max_cpts=500, sampling_probability=0.1)
 tune(segmentor, df_train)
 tune.show()
 

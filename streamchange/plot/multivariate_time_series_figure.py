@@ -1,7 +1,7 @@
 import numpy as np
 import pandas as pd
 
-from .univariate import TimeSeriesFigure
+from . import TimeSeriesFigure
 from plotly.subplots import make_subplots
 
 
