@@ -1,9 +1,9 @@
-from .penalty_tuner import PenaltyTuner
+from .threshold_tuner import ThresholdTuner
 from .simple_tuner import SimpleTuner
 from .spline_tuner import SplineTuner
 
 __all__ = [
-    "PenaltyTuner",
+    "ThresholdTuner",
     "SimpleTuner",
     "SplineTuner",
 ]

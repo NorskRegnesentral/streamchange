@@ -1,4 +1,4 @@
-from . import Segmentor
+from . import ChangeDetector
 
 import numpy as np
 from numba import njit
@@ -9,8 +9,8 @@ def univariate_cusum_test(sums: np.ndarray):
     n = sums.size
     t = np.arange(1, n)
     tests = np.sqrt(n / (t * (n - t))) * np.abs(t / n * sums[-1] - sums[:-1])
-    cpt = tests.argmax() + 1
-    cpt_test = tests[cpt - 1]
+    cpt = tests.argmax()  # The last index of a segment.
+    cpt_test = tests[cpt]
     return cpt_test, cpt
 
 
@@ -29,9 +29,9 @@ def univariate_cusum_tests_for(starts: np.ndarray, ends: np.ndarray, x: np.ndarr
     return tests, cpts
 
 
-class UnivariateCUSUM(Segmentor):
-    def set_default_penalty(self, n: float):
-        self.penalty = np.sqrt(2.0 * np.log(n))
+class UnivariateCUSUM(ChangeDetector):
+    def set_default_threshold(self, n: float):
+        self.threshold = np.sqrt(2.0 * np.log(n))
 
     def test(self, x: np.ndarray) -> np.ndarray:
         """
@@ -43,9 +43,7 @@ class UnivariateCUSUM(Segmentor):
         Returns:
             (Change-point test statistic, most likely change-point)
         """
-        if x.size < self.min_size_window:
-            return 0.0, 0
         return univariate_cusum_test(x.cumsum())
 
-    def tests_for(self, starts: list, ends: list, x: np.ndarray):
+    def _tests_for(self, starts: list, ends: list, x: np.ndarray):
         return univariate_cusum_tests_for(np.array(starts), np.array(ends), x)

@@ -1,4 +1,4 @@
-from . import PenaltyTuner
+from . import ThresholdTuner
 from .utils import signed_curvature
 
 import numpy as np
@@ -6,7 +6,7 @@ from scipy.interpolate import UnivariateSpline
 import plotly.graph_objects as go
 
 
-class SplineTuner(PenaltyTuner):
+class SplineTuner(ThresholdTuner):
     def __init__(self, smoothing_factor: int = 50, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.smoothing_factor = smoothing_factor
@@ -22,35 +22,35 @@ class SplineTuner(PenaltyTuner):
     def _normalise(x: np.ndarray) -> np.ndarray:
         return (x - x.min()) / (x.max() - x.min())
 
-    def select_penalty(self, penalties):
+    def select_threshold(self, penalties):
         self.normalised_penalties = self.max_cpts * self._normalise(penalties)
         self.smooth_penalties = self._spline_smooth(
             self.normalised_penalties, self.max_cpts * self.smoothing_factor
         )
         argmax_curvature = signed_curvature(self.smooth_penalties).argmax()
-        # The penalty can be a bit unstable if the data is completely constant.
+        # The threshold can be a bit unstable if the data is completely constant.
         # I.e., it might get values on the order of 1e-15 due to rounding errors.
         # Capping downward at 1e-8 is a reasonable choice.
-        self.penalty = max(  # Store for use in show/plotting method.
+        self.threshold = max(  # Store for use in show/plotting method.
             penalties[argmax_curvature], (1 + 0.01) * penalties[-1], 1e-8
         )
-        return self.penalty
+        return self.threshold
 
     def show(self) -> go:
         min_pen = self.penalties.min()
         max_pen = self.penalties.max()
-        normalised_penalty = (
-            self.max_cpts * (self.penalty - min_pen) / (max_pen - min_pen)
+        normalised_threshold = (
+            self.max_cpts * (self.threshold - min_pen) / (max_pen - min_pen)
         )
 
         fig = go.Figure(
             layout=go.Layout(
                 title=(
-                    "Penalty = point of maximum curvature of smoothed normalised"
-                    " penalty series"
+                    "Threshold = point of maximum curvature of smoothed normalised"
+                    " threshold series"
                 ),
                 xaxis_title="Number of changepoints",
-                yaxis_title="Normalised penalty",
+                yaxis_title="Normalised threshold",
             )
         )
         fig.add_traces(
@@ -59,20 +59,20 @@ class SplineTuner(PenaltyTuner):
                     x=np.arange(self.max_cpts),
                     y=self.normalised_penalties,
                     mode="markers",
-                    name="Normalised penalty series",
+                    name="Normalised threshold series",
                 ),
                 go.Scatter(
                     x=np.arange(self.max_cpts),
                     y=self.smooth_penalties,
                     mode="lines",
-                    name="Spline-smoothed penalty series",
+                    name="Spline-smoothed threshold series",
                 ),
                 go.Scatter(
                     x=np.arange(self.max_cpts),
-                    y=np.repeat(normalised_penalty, self.max_cpts),
+                    y=np.repeat(normalised_threshold, self.max_cpts),
                     mode="lines",
                     line_dash="dot",
-                    name="Tuned penalty",
+                    name="Tuned threshold",
                 ),
             ]
         )

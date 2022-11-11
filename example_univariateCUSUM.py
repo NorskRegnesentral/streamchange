@@ -1,5 +1,5 @@
 from streamchange.detector import UnivariateCUSUM
-from streamchange.penalty_tuner import SimpleTuner
+from streamchange.threshold_tuner import SimpleTuner
 from streamchange.utils.example_data import three_segments_data
 from streamchange.plot import TimeSeriesFigure
 
