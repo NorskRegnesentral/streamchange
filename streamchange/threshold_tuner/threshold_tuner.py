@@ -1,7 +1,5 @@
 from streamchange.detector.change_detector import ChangeDetector
 
-# from streamchange.detector.segmentor_collection import SegmentorCollection
-
 import abc
 import pandas as pd
 import numpy as np
@@ -31,15 +29,29 @@ class ThresholdTuner:
     """
     Class for tuning the threshold of a segmentor.
     Can be used for tuning and storing a threshold for later use, or to
-    set the threshold in a segmentor directly.
+    set the threshold in a detector directly.
     """
 
     def __init__(self, max_cpts: int = 1000, sampling_probability: float = 1.0):
         self.max_cpts = max_cpts
         self.sampling_probability = sampling_probability
 
-    def __call__(self, segmentor, data):
-        self.tune(segmentor, data)
+    def __call__(self, detector, data):
+        self.tune(detector, data)
+
+    def _detect_and_locate_in(self, starts: list, ends: list, x: np.ndarray):
+        """
+        Outputs the optimal test statistic and maximising argument (changepoint)
+        of each interval given by start[i]:(end[i]) in x.
+        The purpose of this method is to facilitate computationally efficient
+        threshold tuning for specific segmentors. I.e., it should be overwritten
+        by a subclass.
+        See UnivariateCUSUM for example.
+        """
+        tests, cpts = zip(*[self.test(x[s:e]) for s, e in zip(starts, ends)])
+        tests = list(tests)
+        cpts = list(np.array(starts) + np.array(cpts))
+        return tests, cpts
 
     def find_penalties(self, detector: ChangeDetector, data: pd.Series) -> np.ndarray:
         assert not pd.isnull(data).any()
@@ -63,7 +75,8 @@ class ThresholdTuner:
             argmax = tests.argmax()
             penalties[i] = tests[argmax]
             max_cpt = cpts[argmax]
-            tests[(starts <= max_cpt) & (ends > max_cpt)] = 0.0
+            cpt_in_interval = (max_cpt >= starts) & (max_cpt < ends)
+            tests[cpt_in_interval] = 0.0
             i += 1
 
         self.penalties = penalties  # Store to be able to evaluate and plot.
@@ -72,29 +85,14 @@ class ThresholdTuner:
     @abc.abstractmethod
     def select_threshold(self, penalties):
         """
-        threshold selection procedure.
+        Threshold selection procedure.
         """
 
-    def tune_detector(self, detector: ChangeDetector, data: pd.Series):
-        penalties = self.find_penalties(detector, data.dropna())
-        detector.threshold = self.select_threshold(penalties)
-
-    # def tune_detector_collection(
-    #     self, detector: DetectorCollection, data: pd.DataFrame
-    # ):
-    #     for name in detector.keys():
-    #         self.tune_detector(detector[name], data[name])
-
-    def tune(self, detector, data):
-        if isinstance(detector, ChangeDetector):
-            self.tune_detector(detector, data)
-        # elif isinstance(segmentor, SegmentorCollection):
-        #     self.tune_segmentor_collection(segmentor, data)
-        else:
-            raise ValueError(
-                "tune(segmentor, data) requires segmentor to be an instance of"
-                " Segmentor or SegmentorCollection."
-            )
+    def tune(self, detector: ChangeDetector, data: pd.Series):
+        self._detector = detector
+        self._data = data.dropna()
+        penalties = self._find_penalties()
+        detector.threshold = self._select_threshold(penalties)
 
     def show(self):
         pass
