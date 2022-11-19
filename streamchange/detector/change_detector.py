@@ -15,7 +15,7 @@ class ChangeDetector:
         return self._change_detected
 
     @abc.abstractmethod
-    def update(self, x: np.ndarray) -> "ChangeDetector":
+    def update(self, x: dict) -> "ChangeDetector":
         """Update the change detector with a single data point.
 
         Parameters
@@ -51,3 +51,8 @@ class MultivariateChangeDetector(ChangeDetector):
             self._init_variable_names(x)
 
         return super().update(self._dict_to_nprow(x))
+
+
+def dictrow_to_numpy(x):
+    p = len(self._variable_names)
+    np.array([x[name] for name in self._variable_names]).reshape(1, p)

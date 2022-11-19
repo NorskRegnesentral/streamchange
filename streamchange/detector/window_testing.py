@@ -40,11 +40,21 @@ class WindowTesting(ChangeDetector):
 
     @property
     def changepoints(self):
+        """List of detected changepoints per iteration (call to update).
+
+        Changepoints are stored as their distance from the last observation.
+        This makes it easy to extract changepoints also outside this class,
+        where the relevant temporal frame of reference is.
+        """
         return self._changepoints
 
     def _reset(self):
         self._reset_results()
-        self._reset_window()
+        self._window = None
+        self._variable_names = None
+
+    def _init_variable_names(self, x: dict):
+        self._variable_names = list(x.keys())
 
     def _reset_results(self):
         self._changepoints = []
@@ -57,24 +67,21 @@ class WindowTesting(ChangeDetector):
         if self.fetch_test_results:
             self.test_results.append(get_public_properties(self.test))
 
-    def _reset_window(self):
-        self._window = None
+    def _init_window(self, x: dict):
+        self._window = np.empty((0, len(x)))
 
-    def _init_window(self, x: np.ndarray):
-        if len(x.shape) == 1:
-            self._window = np.empty((0, 1))
-        elif len(x.shape) == 2:
-            self._window = np.empty((0, x.shape[1]))
-        else:
-            ValueError("x must be 1- or 2-dimensional.")
+    def _to_nprow(self, x: dict):
+        p = len(self._variable_names)
+        return np.array([x[name] for name in self._variable_names]).reshape(1, p)
 
-    def _update_window(self, x: np.ndarray):
+    def _update_window(self, x: dict):
         n = self._window.shape[0]
         if self.change_detected:
-            new_start = (n - 1) - self._changepoints[-1] + 1
+            most_recent_cangepoint = (n - 1) - self._changepoints[-1]
+            start = most_recent_cangepoint + 1
         else:
-            new_start = max(0, n - self.max_window + 1)
-        self._window = np.concatenate((self._window[new_start:], x))
+            start = max(0, n - self.max_window + 1)
+        self._window = np.concatenate((self._window[start:], self._to_nprow(x)))
 
     def _detect_changes(self):
         self._reset_results()
@@ -84,17 +91,13 @@ class WindowTesting(ChangeDetector):
         while end <= n:
             self.test.detect(self._window[start:end])
             if self.test.change_detected:
-                # Changepoints are stored as their distance from the their
-                # index of detection. This provides simple extraction of
-                # changepoints also outside of this method, where there might be
-                # some other temporal frame of reference.
                 self._append_results()
                 start = self.test.changepoint + 1
                 end = start + self.min_window
             else:
                 end += 1
 
-    def update(self, x: np.ndarray):
+    def update(self, x):
         """Update the change detector with a single data point.
 
         Parameters
@@ -108,6 +111,9 @@ class WindowTesting(ChangeDetector):
         """
         if self._window is None:
             self._init_window(x)
+
+        if self._variable_names is None:
+            self._init_variable_names(x)
 
         self._update_window(x)
         self._detect_changes()

@@ -1,4 +1,3 @@
-import numbers
 import numpy as np
 from numba import njit
 
@@ -21,9 +20,9 @@ def cusum_transform(x: np.ndarray) -> np.ndarray:
 @njit
 def optim_sum_cusum(x: np.ndarray):
     cusum = cusum_transform(x)
-    sum_cusum = np.abs(cusum).sum(axis=1)
-    argmax_cusum = sum_cusum.argmax()  # The last index of a segment.
-    max_cusum = sum_cusum[argmax_cusum]
+    agg_cusum = np.abs(cusum).sum(axis=1)
+    argmax_cusum = agg_cusum.argmax()  # The last index of a segment.
+    max_cusum = agg_cusum[argmax_cusum]
     return max_cusum, argmax_cusum
 
 
@@ -35,8 +34,9 @@ class MultivariateCUSUM(AMOCTest):
 
     def set_default_threshold(self, n: float, p: float):
         self.threshold = np.sqrt(2.0 * p * np.log(n))
+        return self
 
-    def detect(self, x: np.ndarray) -> tuple:
+    def detect(self, x):
         self.test_stat, self._changepoint = optim_sum_cusum(x)
         self._change_detected = self.test_stat > self.threshold
         return self
