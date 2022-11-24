@@ -13,5 +13,5 @@ setup(
     long_description="",
     long_description_content_type="text/markdown",
     packages=["streamchange"],
-    install_requires=["pandas", "numpy", "numba", "scipy", "copy", "plotly"],
+    install_requires=["pandas", "numpy", "numba", "scipy", "plotly"],
 )
