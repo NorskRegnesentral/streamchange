@@ -53,9 +53,6 @@ class WindowTesting(ChangeDetector):
         self._window = None
         self._variable_names = None
 
-    def _init_variable_names(self, x: dict):
-        self._variable_names = list(x.keys())
-
     def _reset_results(self):
         self._changepoints = []
         if self.fetch_test_results:
@@ -66,6 +63,9 @@ class WindowTesting(ChangeDetector):
         self._changepoints.append((n - 1) - self.test.changepoint)
         if self.fetch_test_results:
             self.test_results.append(get_public_properties(self.test))
+
+    def _init_variable_names(self, x: dict):
+        self._variable_names = list(x.keys())
 
     def _init_window(self, x: dict):
         self._window = np.empty((0, len(x)))

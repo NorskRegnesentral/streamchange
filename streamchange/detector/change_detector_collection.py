@@ -32,13 +32,13 @@ class ChangeDetectorCollection(ChangeDetector):
         for name in self.keys():
             self[name].reset()
 
-    def update(self, values: dict):
+    def update(self, x):
         self._changepoints = []
-        for name, value in values.items():
+        for name, value in x.items():
             if pd.isnull(value):
                 continue
             self[name].update(value)
-            self._changepoints += self[name]._changepoints
+            self._changepoints += self[name].changepoints
 
         self._change_detected = True if len(self._changepoints) > 0 else False
         return self
