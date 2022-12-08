@@ -5,7 +5,7 @@ from .utils import get_public_properties
 from streamchange.amoc_test import AMOCTest
 
 
-class WindowTesting(ChangeDetector):
+class WindowSegmentor(ChangeDetector):
     """
     Class for testing-based changepoint detection.
 
