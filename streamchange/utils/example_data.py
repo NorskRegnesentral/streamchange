@@ -25,3 +25,17 @@ def three_segments_data(p=2, seg_len=100, mean_change=2, seed=10):
         )
     )
     return pd.DataFrame(x, index=range(len(x)))
+
+
+def simulate_changing_data(means, seg_lens=[100], p=1, seed=10):
+    np.random.seed(seed)
+    cov = np.identity(p)
+    if len(seg_lens) == 1:
+        seg_lens = list(np.repeat(seg_lens[0], len(means)))
+
+    segments = [
+        np.random.multivariate_normal(np.repeat(mean, p), cov, seg_len)
+        for mean, seg_len in zip(means, seg_lens)
+    ]
+    x = np.concatenate(tuple(segments))
+    return pd.DataFrame(x, index=range(len(x)))
