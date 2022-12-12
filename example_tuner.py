@@ -1,18 +1,20 @@
-from streamchange.detector import UnivariateCUSUM
-from streamchange.threshold_tuner import SimpleTuner
+from streamchange.amoc_test import UnivariateCUSUM
+from streamchange.detector import WindowSegmentor
+from streamchange.tune import ThresholdTuner, base_selector
 from streamchange.utils.example_data import three_segments_data
 
 seg_len = 10000
 df = three_segments_data(p=1, seg_len=seg_len, mean_change=2)[0]
 
-detector = UnivariateCUSUM(min_window=4, max_window=1000)
-tune = SimpleTuner(0.5, max_cpts=100, sampling_probability=0.1)
+test = UnivariateCUSUM()
+detector = WindowSegmentor(test, min_window=4, max_window=100, fetch_test_results=True)
+tune = ThresholdTuner(max_cpts=100, sampling_probability=0.1, selector = base_selector(0.5))
 tune(detector, df)
 tune.show()
 
 cpts = []
-for index, value in df.items():
-    detector.update(value)
-    if detector._change_detected:
-        cpts.append((index, detector.cpts))
+for t, x in df.items():
+    detector.update({df.name: x})
+    if detector.change_detected:
+        cpts.append((t, detector.changepoints))
 print(cpts)
