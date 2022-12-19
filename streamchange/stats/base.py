@@ -1,4 +1,5 @@
 import abc
+import numbers
 import numpy as np
 
 class SegmentStat(abc.ABC):
@@ -7,7 +8,7 @@ class SegmentStat(abc.ABC):
         pass
 
     @abc.abstractmethod
-    def revert(self, x, w=1.0) -> "SegmentStat":
+    def revert(self, X: np.ndarray) -> "SegmentStat":
         pass
 
     @abc.abstractmethod

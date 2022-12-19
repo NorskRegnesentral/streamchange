@@ -20,10 +20,10 @@ for t, x in df.items():
     stat.update(x)
     if detector.change_detected:
         cpts.append((t, detector.changepoints))
-        x_since_cpt = df.iloc[t - detector.changepoints[-1] + 1 : t + 1]
-        stat.revert(x_since_cpt.mean(), x_since_cpt.size)
+        x_aftercpt = df.iloc[t - detector.changepoints[-1] + 1 : t + 1].to_numpy()
+        stat.revert(x_aftercpt)
         segment_stats.append(stat.get())
-        stat.restart(x_since_cpt.to_numpy())
+        stat.restart(x_aftercpt)
 print(cpts)
 print(segment_stats)
 
@@ -31,6 +31,8 @@ print(segment_stats)
 ###################
 ## Several stats ##
 ###################
+from streamchange.stats import Quantile
+
 test = UnivariateCUSUM().set_default_threshold(10 * df.size)
 detector = WindowSegmentor(test, min_window=4, max_window=100)
 stats = {
@@ -47,19 +49,18 @@ for t, x in df.items():
         stat.update(x)
     if detector.change_detected:
         cpts.append((t, detector.changepoints))
-        x_since_cpt = df.iloc[t - detector.changepoints[-1] + 1 : t + 1]
+        x_aftercpt = df.iloc[t - detector.changepoints[-1] + 1 : t + 1].to_numpy()
         segment_stats.append({})
         for name, stat in stats.items():
-            stat.revert(x_since_cpt.mean(), x_since_cpt.size)
+            stat.revert(x_aftercpt)
             segment_stats[-1][name] = stat.get()
-            stat.revert(stat.get(), stat.n)
-            stat.update_many(x_since_cpt.to_numpy())
+            stat.restart(x_aftercpt)
 print(cpts)
 print(segment_stats)
 
 # Custom needs/utilities:
 #  - stat.revert() for all stats.
-#  - stat.restart(x_since_cpt): reset stat, then .update_many().
+#  - stat.restart(x_aftercpt): reset stat, then .update_many().
 #  - Implement these functions on collection level to avoid the visible loops over stats?
 #      * Similar to Transformer Collection?
 #  - Pipeline: ChangeDetector -> stats?
