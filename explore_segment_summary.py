@@ -1,6 +1,10 @@
+from river.stats import Mean, Quantile
+
 from streamchange.amoc_test import UnivariateCUSUM
 from streamchange.detector import WindowSegmentor
-from streamchange.stats import Mean
+from streamchange.stats import Dequified
+
+# from streamchange.stats import Mean
 from streamchange.utils.example_data import three_segments_data
 
 seg_len = 100000
@@ -10,8 +14,9 @@ df = three_segments_data(p=1, seg_len=seg_len, mean_change=10)[0]
 ## Single stat ##
 ##################
 test = UnivariateCUSUM().set_default_threshold(10 * df.size)
-detector = WindowSegmentor(test, min_window=4, max_window=100)
-stat = Mean()
+max_window = 100
+detector = WindowSegmentor(test, min_window=4, max_window=max_window)
+stat = Dequified(Mean, max_window)
 
 cpts = []
 segment_stats = []
@@ -20,10 +25,10 @@ for t, x in df.items():
     stat.update(x)
     if detector.change_detected:
         cpts.append((t, detector.changepoints))
-        x_aftercpt = df.iloc[t - detector.changepoints[-1] + 1 : t + 1].to_numpy()
-        stat.revert(x_aftercpt)
-        segment_stats.append(stat.get())
-        stat.restart(x_aftercpt)
+        window = detector._window.reshape(-1)
+        new_stats = stat.get_restart(detector.changepoints, window)
+        segment_stats += new_stats
+segment_stats.append(stat.get())
 print(cpts)
 print(segment_stats)
 
@@ -31,30 +36,29 @@ print(segment_stats)
 ###################
 ## Several stats ##
 ###################
-from streamchange.stats import Quantile
-
 test = UnivariateCUSUM().set_default_threshold(10 * df.size)
-detector = WindowSegmentor(test, min_window=4, max_window=100)
+max_window = 100
+detector = WindowSegmentor(test, min_window=4, max_window=max_window)
 stats = {
-    "mean": Mean(),
-    "quantile01": Quantile(0.01),
-    "quantile99": Quantile(0.99),
+    "mean": Dequified(Mean, max_window),
+    "quantile01": Dequified(Quantile, max_window, q=0.01),
+    "quantile99": Dequified(Quantile, max_window, q=0.99),
 }
 
 cpts = []
-segment_stats = []
+segment_stats = {name: [] for name in stats.keys()}
 for t, x in df.items():
     detector.update({df.name: x})
     for stat in stats.values():
         stat.update(x)
     if detector.change_detected:
         cpts.append((t, detector.changepoints))
-        x_aftercpt = df.iloc[t - detector.changepoints[-1] + 1 : t + 1].to_numpy()
-        segment_stats.append({})
+        window = detector._window.reshape(-1)
         for name, stat in stats.items():
-            stat.revert(x_aftercpt)
-            segment_stats[-1][name] = stat.get()
-            stat.restart(x_aftercpt)
+            new_stats = stat.get_restart(detector.changepoints, window)
+            segment_stats[name] += new_stats
+for name, stat in stats.items():
+    segment_stats[name].append(stat.get())
 print(cpts)
 print(segment_stats)
 
