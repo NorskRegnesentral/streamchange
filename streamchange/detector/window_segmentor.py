@@ -1,4 +1,5 @@
 import numpy as np
+import pandas as pd
 
 from .change_detector import ChangeDetector
 from .utils import get_public_properties
@@ -63,6 +64,12 @@ class WindowSegmentor(ChangeDetector):
         self._changepoints.append((n - 1) - self.test.changepoint)
         if self.fetch_test_results:
             self.test_results.append(get_public_properties(self.test))
+
+    def get_window(self, as_pandas=True):
+        if as_pandas:
+            return pd.DataFrame(self._window, columns=self._variable_names)
+        else:
+            return self._window
 
     def _init_variable_names(self, x: dict):
         self._variable_names = list(x.keys())

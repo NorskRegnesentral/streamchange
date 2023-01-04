@@ -17,3 +17,7 @@ def separate_lower_upper(df: pd.DataFrame):
     ci_lower = pd.concat(ci_lower_series, axis=1, keys=df.columns)
     ci_upper = pd.concat(ci_upper_series, axis=1, keys=df.columns)
     return ci_lower, ci_upper
+
+def has_method(obj, method_name):
+    method = getattr(obj, method_name, None)
+    return callable(method)
