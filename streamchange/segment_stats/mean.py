@@ -4,7 +4,7 @@ import pandas as pd
 from .base import SegmentStat
 
 
-class Mean(SegmentStat, river.stats.Mean):
+class Mean(river.stats.Mean, SegmentStat):
     def reset(self):
         self.n = 0
         self._mean = 0.0
