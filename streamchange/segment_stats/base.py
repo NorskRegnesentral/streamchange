@@ -10,6 +10,7 @@ class SegmentStat(abc.ABC):
 
     @abc.abstractmethod
     def get(self, i: int = -1) -> numbers.Number:
+        """Get value of statistic -i steps ago."""
         pass
 
     @abc.abstractmethod
