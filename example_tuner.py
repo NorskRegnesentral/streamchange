@@ -7,8 +7,8 @@ seg_len = 100
 df = three_segments_data(p=1, seg_len=seg_len, mean_change=2)[0]
 
 test = UnivariateCUSUM()
-detector = WindowSegmentor(test, min_window=4, max_window=100, fetch_test_results=True)
-tune = ThresholdTuner(max_cpts=100, sampling_probability=0.1, selector = base_selector(0.5))
+detector = WindowSegmentor(test, min_window=4, max_window=100)
+tune = ThresholdTuner(max_cpts=100, prob=0.1, selector=base_selector(0.5))
 tune(detector, df)
 tune.show()
 

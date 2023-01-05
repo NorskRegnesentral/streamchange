@@ -11,7 +11,7 @@ def generate_intervals(
     data_size: int,
     min_window: int,
     max_window: int,
-    sampling_probability: float = 1.0,
+    prob: float = 1.0,
 ):
     starts = []
     ends = []
@@ -19,7 +19,7 @@ def generate_intervals(
         min_start = max(0, end - max_window)
         max_start = end - min_window + 1
         for start in range(min_start, max_start):
-            if np.random.uniform(0.0, 1.0) <= sampling_probability:
+            if np.random.uniform(0.0, 1.0) <= prob:
                 starts.append(start)
                 ends.append(end)
     return np.array(starts), np.array(ends)
@@ -28,21 +28,25 @@ def generate_intervals(
 def base_selector(alpha=0.0):
     def selector(thresholds):
         return max((1 + alpha) * thresholds[-1], 1e-8)
+
     return selector
+
 
 class ThresholdTuner:
     """
     Class for tuning WindowSegmentor detectors that use amoc tests with a single threshold.
     """
 
-    def __init__(self, max_cpts: int = 1000, sampling_probability: float = 1.0, selector = base_selector()):
+    def __init__(
+        self, max_cpts: int = 1000, prob: float = 1.0, selector=base_selector()
+    ):
         self.max_cpts = max_cpts
-        self.sampling_probability = sampling_probability
+        self.prob = prob
         self.selector = selector
 
     def _detect_in(self, starts: list, ends: list):
         """
-        Outputs the optimal test statistic and changepoint of each interval given 
+        Outputs the optimal test statistic and changepoint of each interval given
         by start[i]:(end[i]) in x.
         """
         test_stats = []
@@ -58,16 +62,14 @@ class ThresholdTuner:
             self.x.shape[0],
             self.detector.min_window,
             self.detector.max_window,
-            self.sampling_probability,
+            self.prob,
         )
         tests, cpts = self._detect_in(starts, ends)
-        print(tests, cpts)
 
         self.thresholds = np.zeros(self.max_cpts)
         i = 0
         while (i < self.max_cpts) & np.any(tests > 0.0):
             argmax = tests.argmax()
-            print(argmax)
             self.thresholds[i] = tests[argmax]
             max_cpt = cpts[argmax]
             cpt_in_interval = (max_cpt >= starts) & (max_cpt < ends)
@@ -85,7 +87,7 @@ class ThresholdTuner:
     def __call__(self, detector: WindowSegmentor, data: pd.DataFrame):
         self.tune(detector, data)
 
-    def show(self, title = "") -> go:
+    def show(self, title="") -> go:
         fig = go.Figure(
             layout=go.Layout(
                 title=title,
