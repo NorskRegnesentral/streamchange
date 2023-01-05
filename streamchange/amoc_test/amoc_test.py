@@ -13,6 +13,12 @@ class AMOCTest:
 
     @property
     def changepoint(self):
+        """The most likely location of a single changepoint.
+
+        Changepoints are consistently stored as their negative index within the 
+        current window. This makes it easy to extract changepoints also outside 
+        this class, where the relevant temporal frame of reference is.
+        """
         return self._changepoint
 
     @abc.abstractmethod

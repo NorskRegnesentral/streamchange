@@ -16,9 +16,10 @@ def univariate_cusum_transform(x: np.ndarray):
 @njit
 def optim_univariate_cusum(x: np.ndarray):
     abs_cusum = np.abs(univariate_cusum_transform(x))
-    argmax_cusum = abs_cusum.argmax()  # The last index of a segment.
+    n = x.size
+    argmax_cusum = abs_cusum.argmax()
     max_cusum = abs_cusum[argmax_cusum]
-    return max_cusum, argmax_cusum
+    return max_cusum, argmax_cusum - n
 
 
 # @njit

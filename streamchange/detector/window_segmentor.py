@@ -43,7 +43,7 @@ class WindowSegmentor(ChangeDetector):
     def changepoints(self):
         """List of detected changepoints per iteration (call to update).
 
-        Changepoints are stored as their distance from the last observation.
+        Changepoints are stored as their negative index within the current window.
         This makes it easy to extract changepoints also outside this class,
         where the relevant temporal frame of reference is.
         """
@@ -61,7 +61,7 @@ class WindowSegmentor(ChangeDetector):
 
     def _append_results(self):
         n = self._window.shape[0]
-        self._changepoints.append((n - 1) - self.test.changepoint)
+        self._changepoints.append(self.test.changepoint)
         if self.fetch_test_results:
             self.test_results.append(get_public_properties(self.test))
 
@@ -82,11 +82,10 @@ class WindowSegmentor(ChangeDetector):
         return np.array([x[name] for name in self._variable_names]).reshape(1, p)
 
     def _update_window(self, x: dict):
-        n = self._window.shape[0]
         if self.change_detected:
-            most_recent_cangepoint = (n - 1) - self._changepoints[-1]
-            start = most_recent_cangepoint + 1
+            start = self._changepoints[-1] + 1
         else:
+            n = self._window.shape[0]
             start = max(0, n - self.max_window + 1)
         self._window = np.concatenate((self._window[start:], self._to_nprow(x)))
 
@@ -99,7 +98,7 @@ class WindowSegmentor(ChangeDetector):
             self.test.detect(self._window[start:end])
             if self.test.change_detected:
                 self._append_results()
-                start = self.test.changepoint + 1
+                start = (self.test.changepoint + n) + 1
                 end = start + self.min_window
             else:
                 end += 1

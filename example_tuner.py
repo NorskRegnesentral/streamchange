@@ -3,7 +3,7 @@ from streamchange.detector import WindowSegmentor
 from streamchange.tune import ThresholdTuner, base_selector
 from streamchange.utils.example_data import three_segments_data
 
-seg_len = 10000
+seg_len = 100
 df = three_segments_data(p=1, seg_len=seg_len, mean_change=2)[0]
 
 test = UnivariateCUSUM()

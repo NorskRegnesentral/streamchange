@@ -21,9 +21,10 @@ def cusum_transform(x: np.ndarray) -> np.ndarray:
 def optim_sum_cusum(x: np.ndarray):
     cusum = cusum_transform(x)
     agg_cusum = np.abs(cusum).sum(axis=1)
-    argmax_cusum = agg_cusum.argmax()  # The last index of a segment.
+    n = x.shape[0]
+    argmax_cusum = agg_cusum.argmax()
     max_cusum = agg_cusum[argmax_cusum]
-    return max_cusum, argmax_cusum
+    return max_cusum, argmax_cusum - n
 
 
 class MultivariateCUSUM(AMOCTest):

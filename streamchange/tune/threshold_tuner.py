@@ -40,9 +40,6 @@ class ThresholdTuner:
         self.sampling_probability = sampling_probability
         self.selector = selector
 
-    def __call__(self, detector: WindowSegmentor, data: pd.DataFrame):
-        self.tune(detector, data)
-
     def _detect_in(self, starts: list, ends: list):
         """
         Outputs the optimal test statistic and changepoint of each interval given 
@@ -53,7 +50,7 @@ class ThresholdTuner:
         for start, end in zip(starts, ends):
             self.detector.test.detect(self.x[start:end])
             test_stats.append(self.detector.test.test_stat)
-            cpts.append(start + self.detector.test.changepoint)
+            cpts.append(end + self.detector.test.changepoint)
         return np.array(test_stats), np.array(cpts)
 
     def _find_thresholds(self) -> np.ndarray:
@@ -64,11 +61,13 @@ class ThresholdTuner:
             self.sampling_probability,
         )
         tests, cpts = self._detect_in(starts, ends)
+        print(tests, cpts)
 
         self.thresholds = np.zeros(self.max_cpts)
         i = 0
         while (i < self.max_cpts) & np.any(tests > 0.0):
             argmax = tests.argmax()
+            print(argmax)
             self.thresholds[i] = tests[argmax]
             max_cpt = cpts[argmax]
             cpt_in_interval = (max_cpt >= starts) & (max_cpt < ends)
@@ -82,6 +81,9 @@ class ThresholdTuner:
         self.x = x.to_numpy()
         self._find_thresholds()
         detector.test.threshold = self.selector(self.thresholds)
+
+    def __call__(self, detector: WindowSegmentor, data: pd.DataFrame):
+        self.tune(detector, data)
 
     def show(self, title = "") -> go:
         fig = go.Figure(
