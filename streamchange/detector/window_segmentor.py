@@ -1,5 +1,4 @@
 import numpy as np
-import pandas as pd
 
 from .change_detector import ChangeDetector
 from .utils import get_public_properties
@@ -24,16 +23,15 @@ class WindowSegmentor(ChangeDetector):
         test: AMOCTest,
         min_window: int = 2,
         max_window: int = np.inf,
-        fetch_test_results: bool = False,
     ):
         assert min_window >= 2
         assert max_window > min_window
 
         self.test = test
-        self.min_window = min_window
         self.max_window = max_window
-        self.fetch_test_results = fetch_test_results
-        self._reset()
+        self.min_window = min_window
+        self.window = NumpyWindow(max_window)
+        self.reset()
 
     @property
     def change_detected(self):
@@ -49,78 +47,57 @@ class WindowSegmentor(ChangeDetector):
         """
         return self._changepoints
 
-    def _reset(self):
-        self._reset_results()
-        self._window = None
-        self._variable_names = None
-
-    def _reset_results(self):
+    def reset(self) -> "WindowSegmentor":
+        self.window.reset()
         self._changepoints = []
-        if self.fetch_test_results:
-            self.test_results = []
-
-    def _append_results(self):
-        n = self._window.shape[0]
-        self._changepoints.append(self.test.changepoint)
-        if self.fetch_test_results:
-            self.test_results.append(get_public_properties(self.test))
-
-    def get_window(self, as_pandas=True):
-        if as_pandas:
-            return pd.DataFrame(self._window, columns=self._variable_names)
-        else:
-            return self._window
-
-    def _init_variable_names(self, x: dict):
-        self._variable_names = list(x.keys())
-
-    def _init_window(self, x: dict):
-        self._window = np.empty((0, len(x)))
-
-    def _to_nprow(self, x: dict):
-        p = len(self._variable_names)
-        return np.array([x[name] for name in self._variable_names]).reshape(1, p)
-
-    def _update_window(self, x: dict):
-        if self.change_detected:
-            start = self._changepoints[-1] + 1
-        else:
-            n = self._window.shape[0]
-            start = max(0, n - self.max_window + 1)
-        self._window = np.concatenate((self._window[start:], self._to_nprow(x)))
+        return self
 
     def _detect_changes(self):
-        self._reset_results()
-        n = self._window.shape[0]
+        self._changepoints = []
+        values = self.window.get()
+        n = len(self.window)
         start = 0
         end = max(n, self.min_window)
         while end <= n:
-            self.test.detect(self._window[start:end])
+            self.test.detect(values[start:end])
             if self.test.change_detected:
-                self._append_results()
+                self._changepoints.append(self.test.changepoint)
                 start = (self.test.changepoint + n) + 1
                 end = start + self.min_window
             else:
                 end += 1
 
     def update(self, x):
-        """Update the change detector with a single data point.
-
-        Parameters
-        ----------
-        x
-            One observation row-vector.
-
-        Returns
-        -------
-        self
-        """
-        if self._window is None:
-            self._init_window(x)
-
-        if self._variable_names is None:
-            self._init_variable_names(x)
-
-        self._update_window(x)
+        last_cpt = self.changepoints[-1] if self.change_detected else -np.inf
+        self.window.update(x, last_cpt)
         self._detect_changes()
         return self
+
+
+class NumpyWindow:
+    def __init__(self, max_length=np.inf):
+        self.max_length = max_length
+        self.reset()
+
+    def reset(self) -> "NumpyWindow":
+        self._w = None
+        self.columns = None
+        return self
+
+    def get(self) -> np.ndarray:
+        return self._w
+
+    def update(self, x: dict, last_cpt=-np.inf):
+        if self._w is None:
+            self.columns = list(x.keys())
+            self.p = len(self.columns)
+            self._w = np.empty((0, self.p))
+
+        n = len(self)
+        new_start = max(0, n + last_cpt + 1, n - self.max_length + 1, 0)
+        next_row = np.array([[x[name] for name in self.columns]])
+        self._w = np.concatenate((self._w[new_start:], next_row))
+        return self
+
+    def __len__(self):
+        return 0 if self._w is None else self._w.shape[0]
