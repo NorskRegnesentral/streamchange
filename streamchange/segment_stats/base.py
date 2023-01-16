@@ -26,7 +26,10 @@ class SegmentStat(abc.ABC):
         return self.reset().update_many(x)
 
     def get_restart(self, cpts: list, x: np.ndarray) -> list:
-        cpts = cpts + [x.size-1]
+        if len(cpts) == 0:
+            return [self.get()]
+
+        cpts = cpts + [x.size - 1]
         stats = []
         for curr_cpt, next_cpt in zip(cpts[:-1], cpts[1:]):
             stats.append(self.get(curr_cpt))
