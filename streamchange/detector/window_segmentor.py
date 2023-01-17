@@ -30,7 +30,7 @@ class WindowSegmentor(ChangeDetector):
         self.test = test
         self.max_window = max_window
         self.min_window = min_window
-        self.window = NumpyWindow(max_window)
+        self.window = DetectionWindow(max_window)
         self.reset()
 
     @property
@@ -54,12 +54,12 @@ class WindowSegmentor(ChangeDetector):
 
     def _detect_changes(self):
         self._changepoints = []
-        values = self.window.get()
+        window = self.window.get()
         n = len(self.window)
         start = 0
         end = max(n, self.min_window)
         while end <= n:
-            self.test.detect(values[start:end])
+            self.test.detect(window[start:end])
             if self.test.change_detected:
                 self._changepoints.append(self.test.changepoint)
                 start = (self.test.changepoint + n) + 1
@@ -67,19 +67,28 @@ class WindowSegmentor(ChangeDetector):
             else:
                 end += 1
 
+    def _detect_changes_generator(self):
+        self._changepoints = []
+        self.window.iterate()
+        while self.window.keep_iterating:
+            subset = self.window.next(self.test)
+            self.test.detect(subset)
+            if self.test.change_detected:
+                self._changepoints.append(self.test.changepoint)
+                self.window.popleft(self.test.changepoint + 1)
+
     def update(self, x):
-        last_cpt = self.changepoints[-1] if self.change_detected else -np.inf
-        self.window.update(x, last_cpt)
+        self.window.append(x)
         self._detect_changes()
         return self
 
 
-class NumpyWindow:
+class DetectionWindow:
     def __init__(self, max_length=np.inf):
         self.max_length = max_length
         self.reset()
 
-    def reset(self) -> "NumpyWindow":
+    def reset(self) -> "DetectionWindow":
         self._w = None
         self.columns = None
         return self
@@ -87,17 +96,54 @@ class NumpyWindow:
     def get(self) -> np.ndarray:
         return self._w
 
-    def update(self, x: dict, last_cpt=-np.inf):
+    def popleft(self, n: int = 1) -> np.ndarray:
+        self._w = self._w[n:]
+        return self._w[:n]
+
+    def append(self, x: dict):
         if self._w is None:
             self.columns = list(x.keys())
             self.p = len(self.columns)
             self._w = np.empty((0, self.p))
 
-        n = len(self)
-        new_start = max(0, n + last_cpt + 1, n - self.max_length + 1, 0)
         next_row = np.array([[x[name] for name in self.columns]])
-        self._w = np.concatenate((self._w[new_start:], next_row))
-        return self
+        self._w = np.concatenate((self._w, next_row))
+        if len(self) > self.max_length:
+            self.popleft()
+
+        n = len(self.window)
+        start = 0
+        end = max(n, self.min_window)
+        while end <= n:
+            self.test.detect(window[start:end])
+            if self.test.change_detected:
+                self._changepoints.append(self.test.changepoint)
+                start = (self.test.changepoint + n) + 1
+                end = start + self.min_window
+            else:
+                end += 1
 
     def __len__(self):
         return 0 if self._w is None else self._w.shape[0]
+
+    def iterate(self):
+        self.start = 0
+        self.end = max(len(self), self.min_window) - 1
+        self.keep_iterating = self.end < len(self)
+
+    def next(self, test: AMOCTest):
+        if test.change_detected:
+            n = len(self)
+            start = (self.test.changepoint + n) + 1
+            return self._w[start : start + self.min_window]
+        else:
+            self.end += 1
+        return self._w[self.start : self.end]
+
+
+# TODO:
+# Implement classical sequential tests (entirely recursive).
+# Possibility of several window mechanics:
+#     Reset to min_window.,
+#     Reset to t.
+# Possibility to adjust candidate change-points (minimum and maximum seglen).
