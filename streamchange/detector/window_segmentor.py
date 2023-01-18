@@ -30,7 +30,7 @@ class WindowSegmentor(ChangeDetector):
         self.test = test
         self.max_window = max_window
         self.min_window = min_window
-        self.window = DetectionWindow(max_window)
+        self.window = DetectionWindow(min_window, max_window)
         self.reset()
 
     @property
@@ -52,30 +52,31 @@ class WindowSegmentor(ChangeDetector):
         self._changepoints = []
         return self
 
+    # def _detect_changes(self):
+    #     self._changepoints = []
+    #     window = self.window.get()
+    #     n = len(self.window)
+    #     start = 0
+    #     end = max(n, self.min_window)
+    #     while end <= n:
+    #         self.test.detect(window[start:end])
+    #         if self.test.change_detected:
+    #             self._changepoints.append(self.test.changepoint)
+    #             start = (self.test.changepoint + n) + 1
+    #             end = start + self.min_window
+    #         else:
+    #             end += 1
+
     def _detect_changes(self):
         self._changepoints = []
-        window = self.window.get()
-        n = len(self.window)
-        start = 0
-        end = max(n, self.min_window)
-        while end <= n:
-            self.test.detect(window[start:end])
-            if self.test.change_detected:
-                self._changepoints.append(self.test.changepoint)
-                start = (self.test.changepoint + n) + 1
-                end = start + self.min_window
-            else:
-                end += 1
-
-    def _detect_changes_generator(self):
-        self._changepoints = []
-        self.window.iterate()
-        while self.window.keep_iterating:
-            subset = self.window.next(self.test)
+        self.window.init_iter()
+        while self.window.keep_iterating():
+            subset = self.window.next()
             self.test.detect(subset)
             if self.test.change_detected:
                 self._changepoints.append(self.test.changepoint)
                 self.window.popleft(self.test.changepoint + 1)
+            self.window.iter(self.test)
 
     def update(self, x):
         self.window.append(x)
@@ -84,7 +85,8 @@ class WindowSegmentor(ChangeDetector):
 
 
 class DetectionWindow:
-    def __init__(self, max_length=np.inf):
+    def __init__(self, min_length=1, max_length=np.inf):
+        self.min_length = min_length
         self.max_length = max_length
         self.reset()
 
@@ -111,34 +113,27 @@ class DetectionWindow:
         if len(self) > self.max_length:
             self.popleft()
 
-        n = len(self.window)
-        start = 0
-        end = max(n, self.min_window)
-        while end <= n:
-            self.test.detect(window[start:end])
-            if self.test.change_detected:
-                self._changepoints.append(self.test.changepoint)
-                start = (self.test.changepoint + n) + 1
-                end = start + self.min_window
-            else:
-                end += 1
-
     def __len__(self):
         return 0 if self._w is None else self._w.shape[0]
 
-    def iterate(self):
+    def init_iter(self):
         self.start = 0
-        self.end = max(len(self), self.min_window) - 1
-        self.keep_iterating = self.end < len(self)
+        self.end = max(len(self), self.min_length) - 1
+        return self
 
-    def next(self, test: AMOCTest):
+    def keep_iterating(self):
+        return self.end <= len(self)
+
+    def next(self):
+        return self._w[self.start : self.end]
+    
+    def iter(self, test: AMOCTest):
         if test.change_detected:
-            n = len(self)
-            start = (self.test.changepoint + n) + 1
-            return self._w[start : start + self.min_window]
+            self.start = (test.changepoint + len(self)) + 1
+            self.end = self.start + self.min_length
         else:
             self.end += 1
-        return self._w[self.start : self.end]
+
 
 
 # TODO:
