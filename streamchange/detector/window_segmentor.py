@@ -1,7 +1,7 @@
 import numpy as np
 
 from .change_detector import ChangeDetector
-from .utils import get_public_properties
+from detection_window import DetectionWindow
 from streamchange.amoc_test import AMOCTest
 
 
@@ -21,17 +21,16 @@ class WindowSegmentor(ChangeDetector):
     def __init__(
         self,
         test: AMOCTest,
-        min_window: int = 2,
-        max_window: int = np.inf,
+        window: DetectionWindow,
     ):
-        assert min_window >= 2
-        assert max_window > min_window
-
         self.test = test
-        self.max_window = max_window
-        self.min_window = min_window
-        self.window = DetectionWindow(min_window, max_window)
+        self.window = window
         self.reset()
+
+    def reset(self) -> "WindowSegmentor":
+        self.window.reset()
+        self._changepoints = []
+        return self
 
     @property
     def change_detected(self):
@@ -47,93 +46,16 @@ class WindowSegmentor(ChangeDetector):
         """
         return self._changepoints
 
-    def reset(self) -> "WindowSegmentor":
-        self.window.reset()
+    def update(self, x):
         self._changepoints = []
-        return self
-
-    # def _detect_changes(self):
-    #     self._changepoints = []
-    #     window = self.window.get()
-    #     n = len(self.window)
-    #     start = 0
-    #     end = max(n, self.min_window)
-    #     while end <= n:
-    #         self.test.detect(window[start:end])
-    #         if self.test.change_detected:
-    #             self._changepoints.append(self.test.changepoint)
-    #             start = (self.test.changepoint + n) + 1
-    #             end = start + self.min_window
-    #         else:
-    #             end += 1
-
-    def _detect_changes(self):
-        self._changepoints = []
+        self.window.append(x)
         self.window.init_iter()
-        while self.window.keep_iterating():
-            subset = self.window.next()
-            self.test.detect(subset)
+        while not self.window.stop_iter():
+            self.test.detect(self.window.next())
             if self.test.change_detected:
                 self._changepoints.append(self.test.changepoint)
-                self.window.popleft(self.test.changepoint + 1)
-            self.window.iter(self.test)
-
-    def update(self, x):
-        self.window.append(x)
-        self._detect_changes()
+                self.window.detection_reaction(self.test)
         return self
-
-
-class DetectionWindow:
-    def __init__(self, min_length=1, max_length=np.inf):
-        self.min_length = min_length
-        self.max_length = max_length
-        self.reset()
-
-    def reset(self) -> "DetectionWindow":
-        self._w = None
-        self.columns = None
-        return self
-
-    def get(self) -> np.ndarray:
-        return self._w
-
-    def popleft(self, n: int = 1) -> np.ndarray:
-        self._w = self._w[n:]
-        return self._w[:n]
-
-    def append(self, x: dict):
-        if self._w is None:
-            self.columns = list(x.keys())
-            self.p = len(self.columns)
-            self._w = np.empty((0, self.p))
-
-        next_row = np.array([[x[name] for name in self.columns]])
-        self._w = np.concatenate((self._w, next_row))
-        if len(self) > self.max_length:
-            self.popleft()
-
-    def __len__(self):
-        return 0 if self._w is None else self._w.shape[0]
-
-    def init_iter(self):
-        self.start = 0
-        self.end = max(len(self), self.min_length) - 1
-        return self
-
-    def keep_iterating(self):
-        return self.end <= len(self)
-
-    def next(self):
-        return self._w[self.start : self.end]
-    
-    def iter(self, test: AMOCTest):
-        if test.change_detected:
-            self.start = (test.changepoint + len(self)) + 1
-            self.end = self.start + self.min_length
-        else:
-            self.end += 1
-
 
 
 # TODO:
