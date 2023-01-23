@@ -1,6 +1,7 @@
 from .change_detector import ChangeDetector
 from .detection_window import DetectionWindow, JumpbackWindow
 from .window_segmentor import WindowSegmentor
+from .adaptive_cusum import LordenPollakCUSUM
 from .utils import get_public_properties
 
 __all__ = [
@@ -8,5 +9,6 @@ __all__ = [
     "WindowSegmentor",
     "DetectionWindow",
     "JumpbackWindow",
+    "LordenPollakCUSUM",
     "get_public_properties",
 ]
