@@ -4,6 +4,9 @@ import abc
 
 class AMOCTest:
     def __init__(self):
+        self.reset()
+
+    def reset(self):
         self._change_detected = False
         self._changepoint = None
 
@@ -15,8 +18,8 @@ class AMOCTest:
     def changepoint(self):
         """The most likely location of a single changepoint.
 
-        Changepoints are consistently stored as their negative index within the 
-        current window. This makes it easy to extract changepoints also outside 
+        Changepoints are consistently stored as their negative index within the
+        current window. This makes it easy to extract changepoints also outside
         this class, where the relevant temporal frame of reference is.
         """
         return self._changepoint
@@ -24,6 +27,8 @@ class AMOCTest:
     @abc.abstractmethod
     def detect(self, x: np.ndarray) -> "AMOCTest":
         """Detect whether there is at least one changepoint in a data vector.
+
+        Should set the self._change_detected and self._changepoint variables.
 
         Parameters
         ----------
@@ -35,3 +40,5 @@ class AMOCTest:
         self
 
         """
+
+        return self
