@@ -1,7 +1,7 @@
 import numpy as np
 
 from .change_detector import ChangeDetector
-from detection_window import DetectionWindow
+from .detection_window import DetectionWindow
 from streamchange.amoc_test import AMOCTest
 
 
