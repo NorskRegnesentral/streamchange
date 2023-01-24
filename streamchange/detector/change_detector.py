@@ -1,18 +1,26 @@
-import numbers
 import abc
-import numpy as np
 
 
 class ChangeDetector:
     def __init__(self):
-        self._change_detected = False
+        self.reset()
 
-    def _reset(self):
-        self._change_detected = False
+    def reset(self):
+        self._changepoints = []
 
     @property
     def change_detected(self):
-        return self._change_detected
+        return len(self._changepoints) > 0
+
+    @property
+    def changepoints(self):
+        """List of detected changepoints per iteration (call to update).
+
+        Changepoints are stored as their negative index within the current window.
+        This makes it easy to extract changepoints also outside this class,
+        where the relevant temporal frame of reference is.
+        """
+        return self._changepoints
 
     @abc.abstractmethod
     def update(self, x: dict) -> "ChangeDetector":
