@@ -4,12 +4,9 @@ from .change_detector import ChangeDetector
 
 
 class LordenPollakCUSUM(ChangeDetector):
-    def __init__(
-        self, rho: numbers.Number, threshold: numbers.Number = 0, zero_tol: float = 1e-8
-    ):
+    def __init__(self, rho: numbers.Number, threshold: numbers.Number = 0):
         self.rho = rho
         self.threshold = threshold
-        self.zero_tol = zero_tol
         self.score = 0.0
         self.sum = 0.0
         self.n = 0
@@ -18,7 +15,7 @@ class LordenPollakCUSUM(ChangeDetector):
         assert len(x) == 1
         x = list(x.values())[0]
 
-        if self.score < self.zero_tol:
+        if self.score < 1e-8:
             self.n = 0
             self.sum = 0.0
         else:
