@@ -6,6 +6,13 @@ from streamchange.amoc_test import AMOCTest
 
 class DetectionWindow:
     def __init__(self, min_length=2, max_length=np.inf):
+        """
+        min_window
+            The minimum size of the window to compute the changepoint test over.
+        max_window
+            The maximum size of the window to compute the changepoint test over.
+            This governs how many historical samples are retained in memory.
+        """
         assert min_length >= 2
         assert max_length > min_length
 

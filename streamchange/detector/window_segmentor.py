@@ -1,7 +1,5 @@
-import numpy as np
-
 from .change_detector import ChangeDetector
-from detection_window import DetectionWindow
+from .detection_window import DetectionWindow
 from streamchange.amoc_test import AMOCTest
 
 
@@ -11,11 +9,10 @@ class WindowSegmentor(ChangeDetector):
 
     Parameters
     ----------
-    min_window
-        The minimum size of the window to compute the changepoint test over.
-    max_window
-        The maximum size of the window to compute the changepoint test over.
-        This governs how many historical samples are retained in memory.
+    test
+        The single changepoint test.
+    window
+        The window mechanism to use.
     """
 
     def __init__(
@@ -60,7 +57,4 @@ class WindowSegmentor(ChangeDetector):
 
 # TODO:
 # Implement classical sequential tests (entirely recursive).
-# Possibility of several window mechanics:
-#     Reset to min_window.,
-#     Reset to t.
 # Possibility to adjust candidate change-points (minimum and maximum seglen).
