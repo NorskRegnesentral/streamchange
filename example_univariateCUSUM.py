@@ -6,7 +6,7 @@ seg_len = 100000
 df = three_segments_data(p=1, seg_len=seg_len, mean_change=10)[0]
 
 test = UnivariateCUSUM(minsl=1).set_default_threshold(10 * df.size)
-window = ResetWindow(4, 100)
+window = JumpbackWindow(4, 100)
 detector = WindowSegmentor(test, window)
 cpts = []
 for t, x in df.items():
