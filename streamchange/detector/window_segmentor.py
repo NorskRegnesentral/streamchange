@@ -25,23 +25,10 @@ class WindowSegmentor(ChangeDetector):
         self.reset()
 
     def reset(self) -> "WindowSegmentor":
-        self.window.reset()
         self._changepoints = []
+        self.test.reset()
+        self.window.reset()
         return self
-
-    @property
-    def change_detected(self):
-        return len(self._changepoints) > 0
-
-    @property
-    def changepoints(self):
-        """List of detected changepoints per iteration (call to update).
-
-        Changepoints are stored as their negative index within the current window.
-        This makes it easy to extract changepoints also outside this class,
-        where the relevant temporal frame of reference is.
-        """
-        return self._changepoints
 
     def update(self, x):
         self._changepoints = []

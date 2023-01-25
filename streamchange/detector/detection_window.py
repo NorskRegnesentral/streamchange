@@ -65,13 +65,19 @@ class DetectionWindow:
 
 
 class SlidingWindow(DetectionWindow):
-    def detection_reaction(self, test: AMOCTest):
+    def detection_reaction(self, test):
         self.popleft(test.changepoint + 1)
         return self
 
 
 class JumpbackWindow(DetectionWindow):
-    def detection_reaction(self, test: AMOCTest):
+    def detection_reaction(self, test):
         self.popleft(test.changepoint + 1)
         self.end = self.min_length
+        return self
+
+
+class ResetWindow(DetectionWindow):
+    def detection_reaction(self, test):
+        self.reset()
         return self

@@ -1,16 +1,20 @@
+import plotly.express as px
+
 from streamchange.amoc_test import UnivariateCUSUM
-from streamchange.detector import WindowSegmentor, JumpbackWindow, ResetWindow
+from streamchange.detector import LordenPollakCUSUM
 from streamchange.utils.example_data import three_segments_data
 
-seg_len = 100000
+seg_len = 1000
 df = three_segments_data(p=1, seg_len=seg_len, mean_change=10)[0]
 
-test = UnivariateCUSUM(minsl=1).set_default_threshold(10 * df.size)
-window = ResetWindow(4, 100)
-detector = WindowSegmentor(test, window)
+detector = LordenPollakCUSUM(4, 100)
+score = []
 cpts = []
 for t, x in df.items():
     detector.update({df.name: x})
+    score.append(detector.score)
     if detector.change_detected:
-        cpts.append((t, detector.changepoints))
+        cpts.append(t)
 print(cpts)
+
+px.scatter(x=range(len(score)), y=score, render_mode="webgl")
