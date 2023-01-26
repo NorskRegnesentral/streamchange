@@ -15,7 +15,7 @@ class TimeSeriesFigure(go.Figure):
 
     @staticmethod
     def make_raw_data_trace(raw_values: pd.Series):
-        return go.Scatter(
+        return go.Scattergl(
             x=raw_values.index,
             y=raw_values,
             mode="markers",
@@ -26,7 +26,7 @@ class TimeSeriesFigure(go.Figure):
 
     @staticmethod
     def make_mean_trace(mean_values: pd.Series):
-        return go.Scatter(
+        return go.Scattergl(
             x=mean_values.index,
             y=mean_values,
             mode="markers",
@@ -37,7 +37,7 @@ class TimeSeriesFigure(go.Figure):
 
     @staticmethod
     def make_highlight_trace(values: pd.Series, name="Highlighted"):
-        return go.Scatter(
+        return go.Scattergl(
             x=values.index,
             y=values,
             mode="markers",
@@ -56,7 +56,7 @@ class TimeSeriesFigure(go.Figure):
             legend_text = f"{100*confidence_level}% confidence interval"
 
         return [
-            go.Scatter(
+            go.Scattergl(
                 x=ci_lower.index,
                 y=ci_lower,
                 mode="lines",
@@ -64,7 +64,7 @@ class TimeSeriesFigure(go.Figure):
                 showlegend=False,
                 name="Upper confidence bound",
             ),
-            go.Scatter(
+            go.Scattergl(
                 x=ci_upper.index,
                 y=ci_upper,
                 mode="lines",
