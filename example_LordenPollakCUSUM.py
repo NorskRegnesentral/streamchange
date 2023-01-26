@@ -1,20 +1,20 @@
 import plotly.express as px
+from river.stream import iter_pandas
 
-from streamchange.amoc_test import UnivariateCUSUM
 from streamchange.detector import LordenPollakCUSUM
-from streamchange.utils.example_data import three_segments_data
+from streamchange.data import simulate
 
-seg_len = 1000
-df = three_segments_data(p=1, seg_len=seg_len, mean_change=10)[0]
+df = simulate([0, 5], seg_lens=[100, 10])
 
 detector = LordenPollakCUSUM(4, 100)
 score = []
-cpts = []
-for t, x in df.items():
-    detector.update({df.name: x})
+res = []
+for t, (x, _) in enumerate(iter_pandas(df)):
+    detector.update(x)
     score.append(detector.score)
     if detector.change_detected:
-        cpts.append(t)
-print(cpts)
+        mean = detector.sum / detector.n
+        res.append(dict(t=t, cpt=detector.changepoints, mean=mean))
+print(res)
 
 px.scatter(x=range(len(score)), y=score, render_mode="webgl")

@@ -2,13 +2,11 @@ from river.stream import iter_pandas
 
 from streamchange.amoc_test import SumCUSUM, MaxCUSUM
 from streamchange.detector import WindowSegmentor, JumpbackWindow
-from streamchange.utils.example_data import three_segments_data
+from streamchange.data import simulate
 from streamchange.utils.profiler import Profiler
 
-seg_len = 100000
-df = three_segments_data(p=10, seg_len=seg_len, mean_change=10)
-
-test = SumCUSUM().set_default_threshold(df.shape[0], 10 * df.shape[1])
+df = simulate([0, 10, 0], [10000], p=2)
+test = MaxCUSUM().set_default_threshold(df.shape[0], 10 * df.shape[1])
 window = JumpbackWindow(4, 100)
 detector = WindowSegmentor(test, window)
 
@@ -22,3 +20,5 @@ print(cpts)
 from streamchange.plot import MultivariateTimeSeriesFigure
 
 fig = MultivariateTimeSeriesFigure(df.columns)
+fig.add_raw_data(df)
+fig.show()

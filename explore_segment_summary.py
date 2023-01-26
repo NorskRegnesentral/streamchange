@@ -5,10 +5,10 @@ import numpy as np
 from streamchange.amoc_test import UnivariateCUSUM
 from streamchange.detector import WindowSegmentor
 from streamchange.segment_stats import SegmentStat, StatCollection, Buffer
-from streamchange.utils.example_data import three_segments_data
+from streamchange.data import simulate
 
 seg_len = 100000
-df = three_segments_data(p=1, seg_len=seg_len, mean_change=10)[0]
+df = simulate([0, 10, 0], [100000], p=1)
 
 
 def fit_segmentation(detector: WindowSegmentor, stat: SegmentStat, series: pd.Series):
