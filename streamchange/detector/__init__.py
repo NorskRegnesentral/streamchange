@@ -6,7 +6,7 @@ from .detection_window import (
     ResetWindow,
 )
 from .window_segmentor import WindowSegmentor
-from .adaptive_cusum import LordenPollakCUSUM
+from .lorden_pollak import LordenPollakCUSUM
 from .utils import get_public_properties
 
 __all__ = [
