@@ -13,6 +13,7 @@ def generate_intervals(
     max_window: int,
     prob: float = 1.0,
 ):
+    # TODO: Account for minsl in interval generation.
     starts = []
     ends = []
     for end in range(min_window, data_size):
@@ -60,8 +61,8 @@ class ThresholdTuner:
     def _find_thresholds(self) -> np.ndarray:
         starts, ends = generate_intervals(
             self.x.shape[0],
-            self.detector.min_window,
-            self.detector.max_window,
+            self.detector.window.min_length,
+            self.detector.window.max_length,
             self.prob,
         )
         tests, cpts = self._detect_in(starts, ends)
