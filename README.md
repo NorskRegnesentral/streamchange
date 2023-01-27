@@ -35,3 +35,7 @@ pip install streamchange git+https://github.com/NorskRegnesentral/streamchange
 - `river` >=0.14
 
 You also need Python >= 3.8. 
+
+## License
+
+Streamchange is a free and open-source software licensed under the [BSD 3-clause license](https://github.com/NorskRegnesentral/streamchange/blob/main/LICENSE).
