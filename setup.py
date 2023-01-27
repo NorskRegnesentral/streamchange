@@ -13,6 +13,5 @@ setuptools.setup(
     long_description="",
     long_description_content_type="text/markdown",
     packages=setuptools.find_packages(),
-    packages=["streamchange"],
     install_requires=["pandas", "numpy", "scipy", "river", "numba", "plotly"],
 )
