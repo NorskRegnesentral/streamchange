@@ -27,7 +27,7 @@ the time of detection.
 
 ## Installation
 ```sh
-pip install streamchange git+https://github.com/NorskRegnesentral/streamchange
+pip install git+https://github.com/NorskRegnesentral/streamchange
 ```
 
 ## Dependencies
