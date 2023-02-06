@@ -16,7 +16,7 @@ def fit_segmentation(detector: WindowSegmentor, stat: SegmentStat, series: pd.Se
     cpts = []
     segment_stats = []
     for t, x in series.items():
-        detector.update({series.name: x})
+        detector.update(x)
         stat.update(x)
         if detector.change_detected:
             cpts.append((t, detector.changepoints))

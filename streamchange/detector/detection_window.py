@@ -1,5 +1,7 @@
 import abc
 import numpy as np
+from numbers import Number
+from typing import Union
 
 from streamchange.amoc_test import AMOCTest
 
@@ -33,14 +35,22 @@ class DetectionWindow:
         self._w = self._w[n:]
         return self._w[:n]
 
-    def append(self, x: dict):
-        if self._w is None:
+    def _init_window(self, x):
+        if isinstance(x, Number):
+            self.columns = None
+            self.p = 1
+            self._w = np.empty((0, 1))
+        else:
             self.columns = list(x.keys())
             self.p = len(self.columns)
             self._w = np.empty((0, self.p))
 
-        next_row = np.array([[x[name] for name in self.columns]])
-        self._w = np.concatenate((self._w, next_row))
+    def append(self, x: Union[Number, dict]):
+        if self._w is None:
+            self._init_window(x)
+
+        next_row = [x] if isinstance(x, Number) else [x[key] for key in self.columns]
+        self._w = np.concatenate((self._w, np.array([next_row])))
         if len(self) > self.max_length:
             self.popleft()
 

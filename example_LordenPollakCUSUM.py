@@ -4,12 +4,12 @@ from river.stream import iter_pandas
 from streamchange.detector import LordenPollakCUSUM
 from streamchange.data import simulate
 
-df = simulate([0, 5], seg_lens=[100, 10])
+series = simulate([0, 5], seg_lens=[100, 10])[0]
 
 detector = LordenPollakCUSUM(rho=4, threshold=100)
 score = []
 res = []
-for t, (x, _) in enumerate(iter_pandas(df)):
+for t, x in series.items():
     detector.update(x)
     score.append(detector.score)
     if detector.change_detected:

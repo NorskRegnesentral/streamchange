@@ -15,9 +15,7 @@ class LordenPollakCUSUM(ChangeDetector):
         self.sum = 0.0
         self.score = 0.0
 
-    def update(self, x):
-        assert len(x) == 1
-        x = next(iter(x.values()))
+    def update(self, x: numbers.Number):
         self._changepoints = []
 
         mean = self.sum / self.n if self.n > 0 else 0

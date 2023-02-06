@@ -1,4 +1,6 @@
 import abc
+from typing import Union
+import numbers
 
 
 class ChangeDetector:
@@ -23,7 +25,7 @@ class ChangeDetector:
         return self._changepoints
 
     @abc.abstractmethod
-    def update(self, x: dict) -> "ChangeDetector":
+    def update(self, x: Union[numbers.Number, dict]) -> "ChangeDetector":
         """Update the change detector with a single data point.
 
         Parameters
