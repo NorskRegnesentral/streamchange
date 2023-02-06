@@ -1,14 +1,15 @@
 from river.stats import Mean, Quantile
+from river.stream import iter_pandas
 import pandas as pd
 import numpy as np
 
 from streamchange.amoc_test import UnivariateCUSUM
-from streamchange.detector import WindowSegmentor
+from streamchange.detector import WindowSegmentor, JumpbackWindow
 from streamchange.segment_stats import SegmentStat, StatCollection, Buffer
 from streamchange.data import simulate
 
-seg_len = 100000
-df = simulate([0, 10, 0], [100000], p=1)
+seg_len = 10000
+series = simulate([0, 10, 0], [100000], p=1)[0]
 
 
 def fit_segmentation(detector: WindowSegmentor, stat: SegmentStat, series: pd.Series):
@@ -28,11 +29,11 @@ def fit_segmentation(detector: WindowSegmentor, stat: SegmentStat, series: pd.Se
 #################
 ## Single stat ##
 #################
-test = UnivariateCUSUM().set_default_threshold(10 * df.size)
-max_window = 100
-detector = WindowSegmentor(test, min_window=4, max_window=max_window)
-stat = Buffer(Mean(), max_window)
-cpts, segment_stats = fit_segmentation(detector, stat, df)
+test = UnivariateCUSUM().set_default_threshold(10 * series.size)
+window = JumpbackWindow(4, 100)
+detector = WindowSegmentor(test, window)
+stat = Buffer(Mean(), window.max_length)
+cpts, segment_stats = fit_segmentation(detector, stat, series)
 print(cpts)
 print(segment_stats)
 
@@ -40,17 +41,17 @@ print(segment_stats)
 ###################
 ## Several stats ##
 ###################
-test = UnivariateCUSUM().set_default_threshold(10 * df.size)
-max_window = 100
-detector = WindowSegmentor(test, min_window=4, max_window=max_window)
+test = UnivariateCUSUM().set_default_threshold(10 * series.size)
+window = JumpbackWindow(4, 100)
+detector = WindowSegmentor(test, window)
 stat = StatCollection(
     {
-        "mean": Buffer(Mean(), max_window),
-        "quantile01": Buffer(Quantile(0.01), max_window),
-        "quantile99": Buffer(Quantile(0.99), max_window),
+        "mean": Buffer(Mean(), window.max_length),
+        "quantile01": Buffer(Quantile(0.01), window.max_length),
+        "quantile99": Buffer(Quantile(0.99), window.max_length),
     }
 )
-cpts, segment_stats = fit_segmentation(detector, stat, df)
+cpts, segment_stats = fit_segmentation(detector, stat, series)
 print(cpts)
 print(segment_stats)
 print(pd.DataFrame(segment_stats))
