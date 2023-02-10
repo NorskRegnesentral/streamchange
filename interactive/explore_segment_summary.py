@@ -1,5 +1,4 @@
 from river.stats import Mean, Quantile
-from river.stream import iter_pandas
 import pandas as pd
 import numpy as np
 
@@ -9,7 +8,7 @@ from streamchange.segment_stats import SegmentStat, StatCollection, Buffer
 from streamchange.data import simulate
 
 seg_len = 10000
-series = simulate([0, 10, 0], [100000], p=1)[0]
+series = simulate([0, 10, 0], [seg_len], p=1)[0]
 
 
 def fit_segmentation(detector: WindowSegmentor, stat: SegmentStat, series: pd.Series):
@@ -29,7 +28,8 @@ def fit_segmentation(detector: WindowSegmentor, stat: SegmentStat, series: pd.Se
 #################
 ## Single stat ##
 #################
-test = UnivariateCUSUM().set_default_threshold(10 * series.size)
+# test = UnivariateCUSUM().set_default_threshold(10 * series.size)
+test = UnivariateCUSUM().set_default_threshold(2)
 window = JumpbackWindow(4, 100)
 detector = WindowSegmentor(test, window)
 stat = Buffer(Mean(), window.max_length)
