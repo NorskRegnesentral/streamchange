@@ -1,14 +1,13 @@
 from river.stream import iter_pandas
 
 from streamchange.amoc_test import SumCUSUM, MaxCUSUM
-from streamchange.detector import WindowSegmentor, JumpbackWindow
+from streamchange.detector import WindowSegmentor
 from streamchange.data import simulate
 from streamchange.utils.profiler import Profiler
 
 df = simulate([0, 10, 0], [10000], p=2)
 test = MaxCUSUM().set_default_threshold(df.shape[0], 10 * df.shape[1])
-window = JumpbackWindow(4, 100)
-detector = WindowSegmentor(test, window)
+detector = WindowSegmentor(test, 4, 100, with_jumpback=True)
 
 cpts = []
 for t, (x, _) in enumerate(iter_pandas(df)):

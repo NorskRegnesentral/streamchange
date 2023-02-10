@@ -61,8 +61,8 @@ class ThresholdTuner:
     def _find_thresholds(self) -> np.ndarray:
         starts, ends = generate_intervals(
             self.x.shape[0],
-            self.detector.window.min_length,
-            self.detector.window.max_length,
+            self.detector.min_window,
+            self.detector.max_window,
             self.prob,
         )
         tests, cpts = self._detect_in(starts, ends)
