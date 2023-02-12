@@ -8,7 +8,7 @@ from .base import SegmentStat
 
 
 class StatUnion(SegmentStat):
-    def __init__(self, stats: Dict[str, SegmentStat], max_history=-np.inf):
+    def __init__(self, stats: Dict[str, SegmentStat], max_history=np.inf):
         super().__init__(max_history)
         for stat in stats.values():
             stat.max_history = max_history
