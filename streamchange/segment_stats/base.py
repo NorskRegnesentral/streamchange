@@ -14,15 +14,15 @@ class SegmentStat(abc.ABC):
 
     def check_get(self, i):
         if i >= 0:
-            raise ValueError("i must be negative.")
+            raise IndexError("i must be negative.")
         elif i < -self.max_history:
-            raise ValueError(
-                f"Cannot get value of SegmentStat beyond {-self.max_history} steps back"
+            raise IndexError(
+                f"Cannot get value of SegmentStat beyond {self.max_history} steps back"
                 f" (i={i})."
             )
 
     @abc.abstractmethod
-    def get(self, i: int = -1) -> numbers.Number:
+    def __getitem__(self, i: int = -1) -> numbers.Number:
         """Get value of statistic -i steps ago."""
         self.check_get(i)
 

@@ -4,8 +4,8 @@ def test_fit_segmentation():
     import numpy as np
 
     from streamchange.amoc_test import UnivariateCUSUM
-    from streamchange.detector import WindowSegmentor
-    from streamchange.segment_stats import StatUnion, Buffer
+    from streamchange.detector import WindowSegmentor, LordenPollakCUSUM
+    from streamchange.segment_stats import StatUnion, StatBuffer
     from streamchange.conveniences import fit_segmentation
     from streamchange.data import simulate
 
@@ -13,12 +13,15 @@ def test_fit_segmentation():
     series = simulate([0, 10, 0], [seg_len], p=1)[0]
     test = UnivariateCUSUM(0)
     detector = WindowSegmentor(test, 2, 100)
-    stat = StatUnion({"mean": Buffer(Mean())}, detector.max_window)
+    stat = StatUnion({"mean": StatBuffer(Mean())}, detector.max_window)
     segmentation = fit_segmentation(detector, stat, series)
     assert len(segmentation) == series.size
 
     test = UnivariateCUSUM(20)
     detector = WindowSegmentor(test, 5, 100)
-    stat = StatUnion({"mean": Buffer(Mean())}, detector.max_window)
-    segmentation = fit_segmentation(detector, stat, series)
+    segmentation = fit_segmentation(detector, stat.reset(), series)
     assert len(segmentation) == 3
+
+    detector = LordenPollakCUSUM(1.0, 10)
+    stat = StatUnion({"mean": StatBuffer(Mean())})
+    # segmentation = fit_segmentation(detector, stat, series)

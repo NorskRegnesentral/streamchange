@@ -6,7 +6,7 @@ import river.stats as river_stats
 from collections import deque
 
 
-class Buffer(SegmentStat):
+class StatBuffer(SegmentStat):
     def __init__(self, stat: river_stats.base.Univariate, max_history=np.inf):
         super().__init__(max_history)
         self.stat = stat
@@ -19,7 +19,7 @@ class Buffer(SegmentStat):
         )
         return self
 
-    def get(self, i: int = -1) -> numbers.Number:
+    def __getitem__(self, i: int = -1) -> numbers.Number:
         self.check_get(i)
         if i == -1:
             return self.stat.get()
@@ -30,3 +30,6 @@ class Buffer(SegmentStat):
         self.stat.update(x)
         self._buffer.append(self.stat.get())
         return self
+
+    def __len__(self):
+        return len(self._buffer)
