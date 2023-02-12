@@ -7,17 +7,20 @@ from collections import deque
 
 
 class Buffer(SegmentStat):
-    def __init__(self, stat: river_stats.base.Univariate, max_restart=1000):
+    def __init__(self, stat: river_stats.base.Univariate, max_history=-np.inf):
+        super().__init__(max_history)
         self.stat = stat
-        self.max_restart = max_restart
         self.reset()
 
     def reset(self) -> "SegmentStat":
         self.stat = self.stat.clone(include_attributes=False)
-        self._buffer = deque(maxlen=self.max_restart)
+        self._buffer = (
+            deque() if np.isinf(self.max_history) else deque(maxlen=self.max_history)
+        )
         return self
 
     def get(self, i: int = -1) -> numbers.Number:
+        self.check_get(i)
         if i == -1:
             return self.stat.get()
         else:

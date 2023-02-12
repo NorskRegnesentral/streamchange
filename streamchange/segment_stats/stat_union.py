@@ -5,8 +5,12 @@ from collections import deque
 
 from .base import SegmentStat
 
-class StatCollection(SegmentStat):
-    def __init__(self, stats: dict):
+
+class StatUnion(SegmentStat):
+    def __init__(self, stats: dict, max_history = -np.inf):
+        super().__init__(max_history)
+        for stat in stats.values():
+            stat.max_history = max_history
         self.stats = stats
 
     def items(self):
@@ -30,10 +34,3 @@ class StatCollection(SegmentStat):
         for stat in self.values():
             stat.update(x)
         return self
-
-
-    # def restart(self, X: np.ndarray):
-    #     pass
-
-    # def get_restart(self, cpts, X: np.ndarray) -> list:
-    #     return {name: stat.get_restart(cpts, X) for name, stat in self.items()}

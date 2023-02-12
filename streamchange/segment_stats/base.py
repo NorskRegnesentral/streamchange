@@ -4,14 +4,25 @@ import numpy as np
 
 
 class SegmentStat(abc.ABC):
+    def __init__(self, max_history=np.inf):
+        self.max_history = max_history
+
     @abc.abstractmethod
     def reset(self) -> "SegmentStat":
         return self
 
+    def check_get(self, i):
+        if i >= 0:
+            raise ValueError("i must be negative.")
+        elif i < -self.max_history:
+            raise ValueError(
+                f"Cannot get value of SegmentStat beyond {-self.max_history} steps back (i={i})."
+            )
+
     @abc.abstractmethod
     def get(self, i: int = -1) -> numbers.Number:
         """Get value of statistic -i steps ago."""
-        pass
+        self.check_get(i)
 
     @abc.abstractmethod
     def update(self, x: numbers.Number) -> "SegmentStat":
@@ -21,17 +32,3 @@ class SegmentStat(abc.ABC):
         for value in np.nditer(x.squeeze()):
             self.update(value)
         return self
-
-    def restart(self, x: np.ndarray) -> "SegmentStat":
-        return self.reset().update_many(x)
-
-    def get_restart(self, cpts: list, x: np.ndarray) -> list:
-        if len(cpts) == 0:
-            return [self.get()]
-
-        cpts = cpts + [x.size - 1]
-        stats = []
-        for curr_cpt, next_cpt in zip(cpts[:-1], cpts[1:]):
-            stats.append(self.get(curr_cpt))
-            self.restart(x[curr_cpt + 1 : next_cpt + 1])
-        return stats
