@@ -1,4 +1,5 @@
 import abc
+from typing import Tuple
 import numbers
 import numpy as np
 from numba import njit
@@ -24,7 +25,7 @@ def cusum_transform(x: np.ndarray, t: np.ndarray) -> np.ndarray:
 @njit
 def _optim(agg_cusum: np.ndarray, t: np.ndarray, n: int):
     argmax = agg_cusum.argmax()
-    return agg_cusum[argmax], t[argmax] - n - 1
+    return agg_cusum[argmax], t[argmax] - n - 1  # Negative changepoint index.
 
 
 class CUSUM(AMOCTest):
@@ -33,18 +34,30 @@ class CUSUM(AMOCTest):
         assert threshold >= 0.0
         self.threshold = threshold
         self.minsl = minsl
+        self.reset()
+
+    def reset(self):
+        super().reset()
+        self._score = -np.inf
+
+    @property
+    def score(self) -> float:
+        return self._score
 
     @abc.abstractmethod
-    def _detect(self, x, t):
+    def set_default_threshold(self, n: float, p: float):
+        return self
+
+    @abc.abstractmethod
+    def _detect(self, x, t) -> Tuple[float, int]:
         pass
 
     def detect(self, x):
+        self.reset()
         if x.shape[0] >= 2 * self.minsl:
             t = np.arange(self.minsl, x.shape[0] - self.minsl + 1)
-            self.test_stat, self._changepoint = self._detect(x, t)
-            self._change_detected = self.test_stat > self.threshold
-        else:
-            self.reset()
+            self._score, self._changepoint = self._detect(x, t)
+            self._change_detected = self._score > self.threshold
         return self
 
 
@@ -58,7 +71,7 @@ def optim_univariate_cusum(x: np.ndarray, t: np.ndarray):
 
 
 class UnivariateCUSUM(CUSUM):
-    def set_default_threshold(self, n: float):
+    def set_default_threshold(self, n, p=1):
         self.threshold = np.sqrt(2.0 * np.log(n))
         return self
 
