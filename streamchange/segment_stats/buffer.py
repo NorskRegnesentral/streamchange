@@ -7,7 +7,7 @@ from collections import deque
 
 
 class Buffer(SegmentStat):
-    def __init__(self, stat: river_stats.base.Univariate, max_history=-np.inf):
+    def __init__(self, stat: river_stats.base.Univariate, max_history=np.inf):
         super().__init__(max_history)
         self.stat = stat
         self.reset()
