@@ -7,13 +7,12 @@ A package for segmenting streaming time series data into homogenous segments. Th
 >>> from river.stream import iter_pandas
 >>> 
 >>> from streamchange.amoc_test import UnivariateCUSUM
->>> from streamchange.detector import WindowSegmentor, JumpbackWindow
+>>> from streamchange.detector import WindowSegmentor
 >>> from streamchange.data import simulate
 >>>
 >>> df = simulate([0, 10, 0], [100], p=1)
 >>> test = UnivariateCUSUM(minsl=1).set_default_threshold(10 * df.size)
->>> window = JumpbackWindow(4, 100)
->>> detector = WindowSegmentor(test, window)
+>>> detector = WindowSegmentor(test, min_window=4, max_window=100)
 >>> cpts = []
 >>> for t, (x, _) in enumerate(iter_pandas(df)):
 ...     detector.update(x)
