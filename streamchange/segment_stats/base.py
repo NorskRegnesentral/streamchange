@@ -5,6 +5,7 @@ import numpy as np
 
 class SegmentStat(abc.ABC):
     def __init__(self, max_history=np.inf):
+        assert max_history >= 1
         self.max_history = max_history
 
     @abc.abstractmethod
@@ -16,7 +17,8 @@ class SegmentStat(abc.ABC):
             raise ValueError("i must be negative.")
         elif i < -self.max_history:
             raise ValueError(
-                f"Cannot get value of SegmentStat beyond {-self.max_history} steps back (i={i})."
+                f"Cannot get value of SegmentStat beyond {-self.max_history} steps back"
+                f" (i={i})."
             )
 
     @abc.abstractmethod
