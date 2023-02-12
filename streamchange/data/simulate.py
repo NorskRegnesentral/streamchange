@@ -2,7 +2,7 @@ import pandas as pd
 import numpy as np
 
 
-def simulate(means, seg_lens=[100], p=1, n_outliers=0, outlier_size=0, seed=10):
+def simulate(means=[0], seg_lens=[100], p=1, n_outliers=0, outlier_size=0, seed=10):
     np.random.seed(seed)
     cov = np.identity(p)
     if len(seg_lens) == 1:
