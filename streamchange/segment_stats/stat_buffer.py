@@ -19,7 +19,7 @@ class StatBuffer(SegmentStat):
         )
         return self
 
-    def __getitem__(self, i: int = -1) -> numbers.Number:
+    def get(self, i: int = -1) -> numbers.Number:
         self.check_get(i)
         if i == -1:
             return self.stat.get()

@@ -34,8 +34,9 @@ class StatUnion(SegmentStat):
             stat.reset()
         return self
 
-    def __getitem__(self, i=-1) -> Dict[str, float]:
-        return {name: stat[i] for name, stat in self.items()}
+    def get(self, i=-1) -> Dict[str, float]:
+        self.check_get(i)
+        return {name: stat.get(i) for name, stat in self.items()}
 
     def update(self, x):
         for stat in self.values():

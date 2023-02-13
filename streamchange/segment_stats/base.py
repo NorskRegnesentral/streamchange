@@ -22,7 +22,7 @@ class SegmentStat(abc.ABC):
             )
 
     @abc.abstractmethod
-    def __getitem__(self, i: int = -1) -> numbers.Number:
+    def get(self, i: int = -1) -> numbers.Number:
         """Get value of statistic -i steps ago."""
         self.check_get(i)
 
