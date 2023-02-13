@@ -50,13 +50,13 @@ class ThresholdTuner:
         Outputs the optimal test statistic and changepoint of each interval given
         by start[i]:(end[i]) in x.
         """
-        test_stats = []
+        scores = []
         cpts = []
         for start, end in zip(starts, ends):
             self.detector.test.detect(self.x[start:end])
-            test_stats.append(self.detector.test.test_stat)
+            scores.append(self.detector.test.score)
             cpts.append(end + self.detector.test.changepoint)
-        return np.array(test_stats), np.array(cpts)
+        return np.array(scores), np.array(cpts)
 
     def _find_thresholds(self) -> np.ndarray:
         starts, ends = generate_intervals(
