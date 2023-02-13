@@ -8,7 +8,7 @@ readme = "README.md"
 repository= "https://github.com/NorskRegnesentral/streamchange"
 
 [tool.poetry.dependencies]
-python = "^3.10"
+python = "^3.9"
 pandas = "^1.5.3"
 numpy = "^1.23.5"
 river = "^0.14.0"
