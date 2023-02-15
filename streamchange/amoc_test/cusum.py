@@ -2,19 +2,20 @@ import abc
 from typing import Tuple
 import numbers
 import numpy as np
-from numba import njit
+
+# from numba import njit
 
 from .amoc_test import AMOCTest
 
 
-@njit
+# @njit
 def univariate_cusum_transform(x: np.ndarray, t: np.ndarray):
     n = x.size
     sums = x.cumsum()
     return np.sqrt(n / (t * (n - t))) * (t / n * sums[-1] - sums[t - 1])
 
 
-@njit
+# @njit
 def cusum_transform(x: np.ndarray, t: np.ndarray) -> np.ndarray:
     cusum = np.zeros((x.shape[0] - 1, x.shape[1]))
     for j in range(x.shape[1]):
@@ -22,7 +23,7 @@ def cusum_transform(x: np.ndarray, t: np.ndarray) -> np.ndarray:
     return cusum
 
 
-@njit
+# @njit
 def _optim(agg_cusum: np.ndarray, t: np.ndarray, n: int):
     argmax = agg_cusum.argmax()
     return agg_cusum[argmax], t[argmax] - n - 1  # Negative changepoint index.
@@ -63,7 +64,7 @@ class CUSUM(AMOCTest):
 
 # Univariate CUSUM
 # ------------------------------------------------------------------------------
-@njit
+# @njit
 def optim_univariate_cusum(x: np.ndarray, t: np.ndarray):
     cusum = univariate_cusum_transform(x, t)
     abs_cusum = np.abs(cusum)
@@ -81,7 +82,7 @@ class UnivariateCUSUM(CUSUM):
 
 # Multivariate CUSUMs
 # ------------------------------------------------------------------------------
-@njit
+# @njit
 def optim_sum_cusum(x: np.ndarray, t: np.ndarray):
     cusum = cusum_transform(x, t)
     agg_cusum = np.abs(cusum).sum(axis=1)
@@ -97,7 +98,7 @@ class SumCUSUM(CUSUM):
         return optim_sum_cusum(x, t)
 
 
-@njit
+# @njit
 def optim_max_cusum(x: np.ndarray, t: np.ndarray):
     abs_cusum = np.abs(cusum_transform(x, t))
     agg_cusum = np.zeros(abs_cusum.shape[0])

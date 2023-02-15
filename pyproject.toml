@@ -11,8 +11,7 @@ repository= "https://github.com/NorskRegnesentral/streamchange"
 python = "^3.9"
 pandas = "^1.5.3"
 numpy = "^1.23.5"
-river = "^0.14.0"
-numba = "^0.56.4"
+river = {git = "https://github.com/online-ml/river.git"}
 
 [tool.poetry.group.dev.dependencies]
 black = "^23.1.0"
