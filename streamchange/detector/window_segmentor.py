@@ -33,7 +33,7 @@ class WindowSegmentor(ChangeDetector):
         self.test = test
         self.min_window = min_window
         self.max_window = max_window
-        self.window = DetectionWindow(max_window)
+        self.window = NumpyWindow(max_window)
         self.with_jumpback = with_jumpback
         self.reset()
 
@@ -64,7 +64,7 @@ class WindowSegmentor(ChangeDetector):
         return self
 
 
-class DetectionWindow:
+class NumpyWindow:
     def __init__(self, max_length=np.inf):
         """
         Parameters
@@ -76,7 +76,7 @@ class DetectionWindow:
         self.max_length = max_length
         self.reset()
 
-    def reset(self) -> "DetectionWindow":
+    def reset(self) -> "NumpyWindow":
         self.columns = None
         self.p = None
         self._w = None
