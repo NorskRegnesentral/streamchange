@@ -1,9 +1,8 @@
 import numpy as np
-from numbers import Number
-from typing import Union
 
 from .change_detector import ChangeDetector
 from streamchange.amoc_test import AMOCTest
+from streamchange.base import NumpyDeque
 
 
 class WindowSegmentor(ChangeDetector):
@@ -33,7 +32,7 @@ class WindowSegmentor(ChangeDetector):
         self.test = test
         self.min_window = min_window
         self.max_window = max_window
-        self.window = NumpyWindow(max_window)
+        self.window = NumpyDeque(max_window)
         self.with_jumpback = with_jumpback
         self.reset()
 
@@ -49,11 +48,10 @@ class WindowSegmentor(ChangeDetector):
         self.window.append(x)
         self._changepoints = []
 
-        w = self.window.get()
         start = 0
         end = max(len(self.window), self.min_window)
         while end <= len(self.window):
-            self.test.detect(w[start:end])
+            self.test.detect(self.window.values[start:end])
             if self.test.change_detected:
                 cpt = self.test.changepoint
                 self._changepoints.append(cpt)
@@ -62,51 +60,3 @@ class WindowSegmentor(ChangeDetector):
                     end = cpt + self.min_window - 1
             end += 1
         return self
-
-
-class NumpyWindow:
-    def __init__(self, max_length=np.inf):
-        """
-        Parameters
-        ----------
-        max_length:
-            The maximum size of the window to compute the changepoint test over.
-            This governs how many historical samples are retained in memory.
-        """
-        self.max_length = max_length
-        self.reset()
-
-    def reset(self) -> "NumpyWindow":
-        self.columns = None
-        self.p = None
-        self._w = None
-        return self
-
-    def get(self) -> np.ndarray:
-        return self._w
-
-    def popleft(self, n: int = 1) -> np.ndarray:
-        self._w = self._w[n:]
-        return self._w[:n]
-
-    def _init_window(self, x):
-        if isinstance(x, Number):
-            self.columns = None
-            self.p = 1
-            self._w = np.empty((0, 1))
-        else:
-            self.columns = list(x.keys())
-            self.p = len(self.columns)
-            self._w = np.empty((0, self.p))
-
-    def append(self, x: Union[Number, dict]):
-        if self._w is None:
-            self._init_window(x)
-
-        next_row = [x] if isinstance(x, Number) else [x[key] for key in self.columns]
-        self._w = np.concatenate((self._w, np.array([next_row])))
-        if len(self) > self.max_length:
-            self.popleft()
-
-    def __len__(self) -> int:
-        return 0 if self._w is None else self._w.shape[0]
