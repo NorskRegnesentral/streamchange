@@ -3,8 +3,8 @@ def test_fit_segmentation():
     import pandas as pd
     import numpy as np
 
-    from streamchange.amoc_test import UnivariateCUSUM
-    from streamchange.detector import WindowSegmentor, LordenPollakCUSUM
+    from streamchange.amoc import WindowSegmentor, UnivariateCUSUM
+    from streamchange.sequential import LordenPollakCUSUM
     from streamchange.segment_stats import StatUnion, StatBuffer
     from streamchange.conveniences import fit_segmentation
     from streamchange.data import simulate

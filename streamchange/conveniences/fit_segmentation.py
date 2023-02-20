@@ -2,7 +2,7 @@ import pandas as pd
 import numpy as np
 from collections import deque
 
-from streamchange.detector import ChangeDetector
+from streamchange.base import ChangeDetector
 from streamchange.segment_stats import StatUnion
 
 

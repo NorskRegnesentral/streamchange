@@ -1,7 +1,6 @@
 from river.stream import iter_pandas
 
-from streamchange.amoc_test import SumCUSUM, MaxCUSUM
-from streamchange.detector import WindowSegmentor
+from streamchange.amoc import SumCUSUM, MaxCUSUM, WindowSegmentor
 from streamchange.data import simulate
 from streamchange.utils.profiler import Profiler
 

@@ -1,4 +1,4 @@
-from streamchange.detector import WindowSegmentor
+from streamchange.amoc import WindowSegmentor
 
 import pandas as pd
 import numpy as np

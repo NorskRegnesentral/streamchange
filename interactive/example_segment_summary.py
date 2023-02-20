@@ -2,8 +2,7 @@ from river.stats import Mean, Quantile
 import pandas as pd
 import numpy as np
 
-from streamchange.amoc_test import UnivariateCUSUM
-from streamchange.detector import WindowSegmentor
+from streamchange.amoc import WindowSegmentor, UnivariateCUSUM
 from streamchange.segment_stats import StatUnion, StatBuffer
 from streamchange.conveniences import fit_segmentation
 from streamchange.data import simulate

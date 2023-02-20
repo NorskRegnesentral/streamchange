@@ -1,7 +1,7 @@
 import plotly.express as px
 from river.stream import iter_pandas
 
-from streamchange.detector import LordenPollakCUSUM
+from streamchange.sequential import LordenPollakCUSUM
 from streamchange.data import simulate
 
 series = simulate([0, 5], seg_lens=[100, 10])[0]

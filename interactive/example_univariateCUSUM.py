@@ -1,7 +1,6 @@
 from river.stream import iter_pandas
 
-from streamchange.amoc_test import UnivariateCUSUM
-from streamchange.detector import WindowSegmentor
+from streamchange.amoc import UnivariateCUSUM, WindowSegmentor
 from streamchange.data import simulate
 
 df = simulate([0, 10, 0], [100000], p=1)

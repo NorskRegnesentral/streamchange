@@ -1,7 +1,7 @@
 import numpy as np
 
 from streamchange.data import simulate
-from streamchange.amoc_test import UnivariateCUSUM
+from streamchange.amoc import UnivariateCUSUM
 
 
 def test_cusum_nochange():

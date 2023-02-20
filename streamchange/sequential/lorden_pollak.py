@@ -1,6 +1,6 @@
 import numbers
 
-from .change_detector import ChangeDetector
+from streamchange.base import ChangeDetector
 
 
 class LordenPollakCUSUM(ChangeDetector):

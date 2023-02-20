@@ -5,9 +5,51 @@ import numpy as np
 
 # from numba import njit
 
-from .amoc_test import AMOCTest
+
+class AMOCTest:
+    def __init__(self):
+        self.reset()
+
+    def reset(self):
+        self._change_detected = False
+        self._changepoint = None
+
+    @property
+    def change_detected(self):
+        return self._change_detected
+
+    @property
+    def changepoint(self):
+        """The most likely location of a single changepoint.
+
+        Changepoints are consistently stored as their negative index within the
+        current window. This makes it easy to extract changepoints also outside
+        this class, where the relevant temporal frame of reference is.
+        """
+        return self._changepoint
+
+    @abc.abstractmethod
+    def detect(self, x: np.ndarray) -> "AMOCTest":
+        """Detect whether there is at least one changepoint in a data vector.
+
+        Should set the self._change_detected and self._changepoint variables.
+
+        Parameters
+        ----------
+        x
+            Input values.
+
+        Returns
+        -------
+        self
+
+        """
+
+        return self
 
 
+# CUSUM
+# ------------------------------------------------------------------------------
 # @njit
 def univariate_cusum_transform(x: np.ndarray, t: np.ndarray):
     n = x.size

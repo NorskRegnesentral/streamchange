@@ -1,8 +1,8 @@
 import numpy as np
 
-from .change_detector import ChangeDetector
-from streamchange.amoc_test import AMOCTest
+from streamchange.base import ChangeDetector
 from streamchange.base import NumpyDeque
+from .tests import AMOCTest
 
 
 class WindowSegmentor(ChangeDetector):
