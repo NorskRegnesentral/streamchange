@@ -23,7 +23,7 @@ class NumpyDeque:
         if isinstance(x, np.ndarray):
             self.columns = None
             self._w = np.empty((0, *x.shape[1:]))
-        if isinstance(x, Number):
+        elif isinstance(x, Number):
             self.columns = None
             self._w = np.empty(0)
         else:
