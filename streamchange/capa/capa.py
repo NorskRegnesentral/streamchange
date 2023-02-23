@@ -1,6 +1,7 @@
 import numpy as np
 import pandas as pd
 from numbers import Number
+from typing import Tuple
 
 from streamchange.base import NumpyDeque
 from .savings import BaseSaving, ConstMeanL2
@@ -23,14 +24,14 @@ class Capa:
         self.psaving = psaving if not psaving is None else csaving
         self.reset()
 
-    def reset(self):
+    def reset(self) -> "Capa":
         self.window = NumpyDeque(self.maxsl)
         self.opt_saving = NumpyDeque(self.maxsl)
         self.opt_saving.append(0)
         self.anom_start = 0
         return self
 
-    def update(self, x: Number):
+    def update(self, x: Number) -> "Capa":
         self.window.append(x)
         base_saving = self.opt_saving.values[-1]
         collective_saving = 0
@@ -50,7 +51,8 @@ class Capa:
         self.anom_start = cpt + 1 if argmax == 2 else -argmax
         return self
 
-    def fit(self, x: pd.Series):
+    def fit(self, x: pd.Series) -> "Capa":
+        self.reset()
         x = x.dropna()
         anom_starts = []
         for value in x.values:
@@ -59,25 +61,25 @@ class Capa:
         self.anom_starts = pd.Series(anom_starts, index=x.index)
         return self
 
-    def predict(self):
+    def predict(self) -> Tuple(list, list):
         collective_anoms = self.collective_anomalies(self.anom_starts)
         point_anoms = self.point_anomalies(self.anom_starts)
         return collective_anoms, point_anoms
 
     @property
-    def point_anomaly_detected(self):
+    def point_anomaly_detected(self) -> bool:
         return self.anom_start == -1
 
     @property
-    def collective_anomaly_detected(self):
+    def collective_anomaly_detected(self) -> bool:
         return self.anom_start < -1
 
     @property
-    def anomaly_detected(self):
+    def anomaly_detected(self) -> bool:
         return self.point_anomaly_detected() or self.collective_anomaly_detected()
 
     @staticmethod
-    def collective_anomalies(anom_starts: pd.Series):
+    def collective_anomalies(anom_starts: pd.Series) -> list:
         i = -1
         times = anom_starts.index
         starts = anom_starts.values
@@ -91,7 +93,7 @@ class Capa:
         return anoms
 
     @staticmethod
-    def point_anomalies(anom_starts: pd.Series):
+    def point_anomalies(anom_starts: pd.Series) -> list:
         i = -1
         times = anom_starts.index
         starts = anom_starts.values
