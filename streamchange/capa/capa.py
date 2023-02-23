@@ -61,7 +61,7 @@ class Capa:
         self.anom_starts = pd.Series(anom_starts, index=x.index)
         return self
 
-    def predict(self) -> Tuple(list, list):
+    def predict(self) -> Tuple[list, list]:
         collective_anoms = self.collective_anomalies(self.anom_starts)
         point_anoms = self.point_anomalies(self.anom_starts)
         return collective_anoms, point_anoms
@@ -87,7 +87,13 @@ class Capa:
         while i >= -starts.size:
             start_i = starts[i]
             if start_i < -1:
-                anoms.append({"start": times[i + 1 + start_i], "end": times[i]})
+                anoms.append(
+                    {
+                        "start": times[i + 1 + start_i],
+                        "end": times[i],
+                        "size": abs(start_i),
+                    }
+                )
                 i += start_i + 1
             i -= 1
         return anoms
@@ -104,6 +110,6 @@ class Capa:
                 i += start_i + 1
             elif start_i == -1:
                 time_i = times[i]
-                anoms.append({"start": time_i, "end": time_i})
+                anoms.append({"start": time_i, "end": time_i, "size": 1})
             i -= 1
         return anoms
