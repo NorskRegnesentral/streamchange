@@ -5,19 +5,19 @@ from typing import Union
 
 
 class BaseSaving:
-    def __init__(self, penalty: float = None, p: int = 1):
-        if penalty is None:
-            arl = 10000
-            self.set_penalty(arl, p=p)
-        else:
-            self.penalty = penalty
+    def __init__(self, penalty: float = None, arl: int = 10000, p: int = 1):
+        self.arl = arl
+        self.p = p
+        self.penalty = self.default_penalty(arl, p) if penalty is None else penalty
+
+    @staticmethod
+    def default_penalty(n: int, p: int = 1) -> float:
+        """Default penalty as function of n and p"""
+        phi = np.log(n)
+        return p + 2 * np.sqrt(p * phi) + 2 * phi
 
     @abc.abstractmethod
-    def set_penalty(self, n: int, p: int = 1):
-        return self
-
-    @abc.abstractmethod
-    def opt(self, x: np.ndarray) -> Number:
+    def opt(self, x: Union[Number, np.ndarray]) -> Number:
         """Calculate the optimal saving"""
 
     @abc.abstractmethod
@@ -26,15 +26,10 @@ class BaseSaving:
 
 
 class ConstMeanL2(BaseSaving):
-    def __init__(self, penalty: float = None, p: int = 1):
-        super().__init__(penalty, p)
+    def __init__(self, penalty=None, arl=10000, p=1):
+        super().__init__(penalty, arl, p)
 
-    def set_penalty(self, n: int, p: int = 1):
-        phi = np.log(n)
-        self.penalty = p + 2 * np.sqrt(p * phi) + 2 * phi
-        return self
-
-    def opt(self, x: Union[Number, np.ndarray]):
+    def opt(self, x):
         if isinstance(x, Number):
             return x**2 - self.penalty
         else:
