@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "streamchange"
-version = "0.1.0"
+version = "0.1.1"
 description = "A package from segmenting streaming time series data into homogenous segments. The segmentation is based on statistical change-point detection (aka online/sequential/iterative change-point detection)."
 authors = ["tveten <tveten@nr.no>"]
 license = "BSD-3"
