@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "streamchange"
-version = "0.1.1"
+version = "0.1.2"
 description = "A package from segmenting streaming time series data into homogenous segments. The segmentation is based on statistical change-point detection (aka online/sequential/iterative change-point detection)."
 authors = ["tveten <tveten@nr.no>"]
 license = "BSD-3"
@@ -8,9 +8,9 @@ readme = "README.md"
 repository= "https://github.com/NorskRegnesentral/streamchange"
 
 [tool.poetry.dependencies]
-python = "^3.9"
-pandas = "^1.5.3"
-numpy = "^1.23.5"
+python = "^3.8"
+pandas = "^1.3"
+numpy = "^1.19"
 river = {git = "https://github.com/online-ml/river.git"}
 
 [tool.poetry.group.dev.dependencies]
