@@ -89,6 +89,7 @@ class CUSUM(AMOCTest):
 
     @abc.abstractmethod
     def set_default_threshold(self, n: float, p: float):
+        # TODO: Handle this is in capa.
         return self
 
     @abc.abstractmethod

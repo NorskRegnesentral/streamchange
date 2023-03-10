@@ -4,6 +4,8 @@ from streamchange.base import ChangeDetector
 from streamchange.base import NumpyDeque
 from .tests import AMOCTest
 
+# TODO: Add fit and predict like in Capa.
+
 
 class WindowSegmentor(ChangeDetector):
     """
