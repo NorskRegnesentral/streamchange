@@ -2,6 +2,7 @@ import abc
 import numpy as np
 from numbers import Number
 from typing import Union
+from numba import njit
 
 
 class BaseSaving:
@@ -25,6 +26,13 @@ class BaseSaving:
         """Calculate the optimal saving cumulatively from the _right_"""
 
 
+@njit
+def cumopt_constmeanl2(x: np.ndarray, penalty: float) -> np.ndarray:
+    sums = np.cumsum(x[::-1])[::-1]
+    k = np.arange(x.shape[0], 0, -1)
+    return sums**2 / k - penalty
+
+
 class ConstMeanL2(BaseSaving):
     def __init__(self, penalty=None, arl=10000, p=1):
         super().__init__(penalty, arl, p)
@@ -36,6 +44,4 @@ class ConstMeanL2(BaseSaving):
             return np.sum(x) ** 2 / x.size - self.penalty
 
     def cumopt(self, x):
-        sums = np.cumsum(x[::-1])[::-1]
-        k = np.arange(x.shape[0], 0, -1)
-        return sums**2 / k - self.penalty
+        return cumopt_constmeanl2(x, self.penalty)
