@@ -3,11 +3,11 @@ from streamchange.amoc import WindowSegmentor
 import pandas as pd
 import numpy as np
 
-# from numba import njit
+from numba import njit
 import plotly.graph_objects as go
 
 
-# @njit
+@njit
 def generate_intervals(
     data_size: int,
     min_window: int,
