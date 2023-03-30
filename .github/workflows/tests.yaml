@@ -22,9 +22,9 @@ jobs:
           sudo apt-get install -yqq build-essential
       - name: Install Python dependencies
         run: |
-          pip install flake8 pytest
-          if [ -f requirements.dev.txt ]; then pip install -r requirements.dev.txt; fi
-          pip install . # install from pyproject.toml
+          pip install flake8 pytest poetry
+          poetry export --dev -f requirements.txt # export deps from pyproject.toml
+          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
       - name: Lint with flake8
         run: |
           # stop the build if there are Python syntax errors or undefined names
