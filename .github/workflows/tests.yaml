@@ -23,7 +23,7 @@ jobs:
       - name: Install Python dependencies
         run: |
           pip install flake8 pytest poetry
-          poetry export --dev -f requirements.txt # export deps from pyproject.toml
+          poetry export --with dev -f requirements.txt > requirements.txt # export deps from pyproject.toml
           pip install -r requirements.txt
       - name: Lint with flake8
         run: |
