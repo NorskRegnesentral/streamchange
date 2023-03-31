@@ -58,7 +58,11 @@ class Capa:
         for value in x.values:
             self.update(value)
             anom_starts.append(self.anom_start)
-        self.anom_starts = pd.Series(anom_starts, index=x.index)
+        if len(anom_starts) == 0:
+            # To silence FutureWarning about dtypes for empty series.
+            self.anom_starts = pd.Series(anom_starts, dtype=x.index.dtype)
+        else:
+            self.anom_starts = pd.Series(anom_starts, index=x.index)
         return self
 
     def predict(self) -> Tuple[list, list]:
