@@ -20,8 +20,8 @@ A package for segmenting streaming time series data into homogenous segments. Th
 print(cpts)
 [(100, [-2]), (200, [-2])]
 ```
-Throughout this package, a change-point is defined as the negative index from
-the time of detection.
+Throughout this package, a change-point is defined as the end of a segment, 
+and it is stored as the negative index from the index of detection.
 
 ## Installation
 ```sh
