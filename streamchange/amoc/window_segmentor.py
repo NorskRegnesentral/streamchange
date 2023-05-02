@@ -32,7 +32,7 @@ class WindowSegmentor(ChangeDetector):
         with_jumpback: bool = True,
     ):
         self.test = test
-        self.min_window = min_window
+        self.min_window = min_window  # TODO: Add checks on minsl, minwindow, maxwindow
         self.max_window = max_window
         self.window = NumpyDeque(max_window)
         self.with_jumpback = with_jumpback
