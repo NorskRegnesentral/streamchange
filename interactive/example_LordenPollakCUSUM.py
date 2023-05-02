@@ -1,5 +1,4 @@
 import plotly.express as px
-from river.stream import iter_pandas
 
 from streamchange.sequential import LordenPollakCUSUM
 from streamchange.data import simulate
