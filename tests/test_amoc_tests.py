@@ -50,3 +50,6 @@ def test_cusum_nan():
         test.detect(x)
         assert not test.change_detected
         assert np.isnan(test.score)
+
+
+# TODO: Add tests for ZeroPrechangeCUSUM and multivariate CUSUMs.

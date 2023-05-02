@@ -4,6 +4,8 @@ import numbers
 import numpy as np
 from numba import njit
 
+from ..utils import geomspace_int
+
 
 class AMOCTest:
     def __init__(self):
@@ -120,6 +122,51 @@ class UnivariateCUSUM(CUSUM):
 
     def _detect(self, x, t):
         return optim_univariate_cusum(x, t)
+
+
+@njit
+def optim_knownprechange_cusum(x: np.ndarray, t: np.ndarray):
+    rightsums = np.cumsum(x[::-1])
+    sample_sizes = -t - 1
+    abs_cusum = np.abs(rightsums[sample_sizes - 1] / np.sqrt(sample_sizes))
+    argmax = np.argmax(abs_cusum)
+    return abs_cusum[argmax], t[argmax]  # Negative changepoint index.
+
+
+class ZeroPrechangeCUSUM(AMOCTest):
+    def __init__(
+        self,
+        threshold: numbers.Number = 0.0,
+        minsl: int = 1,
+        candidate_step: int = 1.5,
+    ):
+        super().__init__()
+        assert threshold >= 0.0
+        self.threshold = threshold
+        self.minsl = minsl
+        self.candidate_step = candidate_step
+        self.reset()
+
+    def reset(self):
+        super().reset()
+        self._score = -np.inf
+
+    @property
+    def score(self) -> float:
+        return self._score
+
+    def set_default_threshold(self, n, p=1):
+        self.threshold = np.sqrt(2.0 * np.log(n))
+        return self
+
+    def detect(self, x):
+        self.reset()
+        n = x.shape[0]
+        if n >= self.minsl:
+            t = -geomspace_int(self.minsl, n, self.candidate_step) - 1
+            self._score, self._changepoint = optim_knownprechange_cusum(x, t)
+            self._change_detected = self._score > self.threshold
+        return self
 
 
 # Multivariate CUSUMs
