@@ -29,8 +29,8 @@ pip install git+https://github.com/NorskRegnesentral/streamchange
 ```
 
 ## Dependencies
-- `pandas` >= 1.5
-- `numpy` >= 1.23
+- `pandas` >= 1.3
+- `numpy` >= 1.19
 - `numba` >= 0.56
 - `river` >=0.14
 
