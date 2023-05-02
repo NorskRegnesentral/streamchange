@@ -8,10 +8,12 @@ from streamchange.amoc import (
 )
 from streamchange.data import simulate
 
-df = simulate([0, 10, 0], [100], p=1)
+df = simulate([0, 10, 0], [100000], p=1)
 test = UnivariateCUSUM(minsl=1).set_default_threshold(10 * df.size)
 detector = WindowSegmentor(test, 4, 100)
-tune = ThresholdTuner(max_cpts=100, prob=0.1, selector=base_selector(0.5))
+tune = ThresholdTuner(
+    max_cpts=100, prob=0.1, max_window_only=False, selector=base_selector(0.5)
+)
 tune(detector, df)
 tune.show()
 

@@ -40,10 +40,15 @@ class ThresholdTuner:
     """
 
     def __init__(
-        self, max_cpts: int = 1000, prob: float = 1.0, selector=base_selector()
+        self,
+        max_cpts: int = 1000,
+        prob: float = 1.0,
+        max_window_only=True,
+        selector=base_selector(),
     ):
         self.max_cpts = max_cpts
         self.prob = prob
+        self.max_window_only = max_window_only
         self.selector = selector
 
     def _detect_in(self, starts: list, ends: list):
@@ -60,12 +65,10 @@ class ThresholdTuner:
         return np.array(scores), np.array(cpts)
 
     def _find_thresholds(self) -> np.ndarray:
-        starts, ends = generate_intervals(
-            self.x.shape[0],
-            self.detector.min_window,
-            self.detector.max_window,
-            self.prob,
-        )
+        max_window = self.detector.max_window
+        min_window = max_window if self.max_window_only else self.detector.min_window
+        n = self.x.shape[0]
+        starts, ends = generate_intervals(n, min_window, max_window, self.prob)
         tests, cpts = self._detect_in(starts, ends)
 
         self.thresholds = np.zeros(self.max_cpts)
