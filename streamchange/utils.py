@@ -4,7 +4,10 @@ from pstats import SortKey
 
 
 def geomspace_int(start: int, stop: int, step: float = 2.0) -> np.ndarray:
-    assert step > 1.0
+    if step <= 1.0:
+        raise ValueError(f"Step must be > 1.0, but step={step}.")
+    if stop < start:
+        raise ValueError(f"Stop is smaller than start: stop={stop}, start={start}.")
 
     values = [start]
     while values[-1] * step < stop:

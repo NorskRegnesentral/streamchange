@@ -1,16 +1,15 @@
 from river.stream import iter_pandas
 
 from streamchange.amoc import (
-    UnivariateCUSUM,
+    CUSUM,
     WindowSegmentor,
     ThresholdTuner,
     base_selector,
 )
 from streamchange.data import simulate
 
-df = simulate([0, 10, 0], [100000], p=1)
-test = UnivariateCUSUM(minsl=1).set_default_threshold(10 * df.size)
-detector = WindowSegmentor(test, 4, 100)
+df = simulate([0, 10, 0], [1000], p=1)
+detector = WindowSegmentor(CUSUM(), 4, 100)
 tune = ThresholdTuner(
     max_cpts=100, prob=0.1, max_window_only=False, selector=base_selector(0.5)
 )

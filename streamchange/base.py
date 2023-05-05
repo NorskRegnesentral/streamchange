@@ -52,8 +52,7 @@ class NumpyDeque:
         self.reset()
 
     def reset(self) -> "NumpyDeque":
-        self.columns = None
-        self._w = None
+        self._init_window(0)
         return self
 
     def _init_window(self, x):
@@ -84,7 +83,7 @@ class NumpyDeque:
         return self._w[:n]
 
     def append(self, x: Union[Number, np.ndarray, dict]):
-        if self._w is None:
+        if len(self) == 0:
             self._init_window(x)
 
         x = self._to_numpy(x)
@@ -93,7 +92,7 @@ class NumpyDeque:
             self.popleft()
 
     def appendleft(self, x: Union[Number, np.ndarray, dict]):
-        if self._w is None:
+        if len(self) == 0:
             self._init_window(x)
 
         x = self._to_numpy(x)

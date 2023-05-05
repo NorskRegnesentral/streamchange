@@ -1,10 +1,9 @@
-from streamchange.amoc import WindowSegmentor
-
 import pandas as pd
 import numpy as np
-
 from numba import njit
 import plotly.graph_objects as go
+
+from .window_segmentor import WindowSegmentor
 
 
 @njit
@@ -34,6 +33,9 @@ def base_selector(alpha=0.0):
     return selector
 
 
+# TODO: Update ThresholdTuner with new cpt definition and new WindowSegmentor
+
+
 class ThresholdTuner:
     """
     Class for tuning WindowSegmentor detectors that use amoc tests with a single threshold.
@@ -59,9 +61,9 @@ class ThresholdTuner:
         scores = []
         cpts = []
         for start, end in zip(starts, ends):
-            self.detector.test.detect(self.x[start:end])
-            scores.append(self.detector.test.score)
-            cpts.append(end + self.detector.test.changepoint)
+            self.detector.estimator.fit(self.x[start:end])
+            scores.append(self.detector.estimator.score)
+            cpts.append(end + self.detector.estimator.changepoint)
         return np.array(scores), np.array(cpts)
 
     def _find_thresholds(self) -> np.ndarray:
@@ -69,16 +71,16 @@ class ThresholdTuner:
         min_window = max_window if self.max_window_only else self.detector.min_window
         n = self.x.shape[0]
         starts, ends = generate_intervals(n, min_window, max_window, self.prob)
-        tests, cpts = self._detect_in(starts, ends)
+        scores, cpts = self._detect_in(starts, ends)
 
         self.thresholds = np.zeros(self.max_cpts)
         i = 0
-        while (i < self.max_cpts) & np.any(tests > 0.0):
-            argmax = tests.argmax()
-            self.thresholds[i] = tests[argmax]
+        while (i < self.max_cpts) & np.any(scores > 0.0):
+            argmax = scores.argmax()
+            self.thresholds[i] = scores[argmax]
             max_cpt = cpts[argmax]
             cpt_in_interval = (max_cpt >= starts) & (max_cpt < ends)
-            tests[cpt_in_interval] = 0.0
+            scores[cpt_in_interval] = 0.0
             i += 1
 
     def tune(self, detector: WindowSegmentor, x: pd.DataFrame):
@@ -87,7 +89,7 @@ class ThresholdTuner:
         self.detector = detector
         self.x = x.to_numpy()
         self._find_thresholds()
-        detector.test.threshold = self.selector(self.thresholds)
+        detector.estimator.penalty = self.selector(self.thresholds)
 
     def __call__(self, detector: WindowSegmentor, data: pd.DataFrame):
         self.tune(detector, data)
@@ -110,7 +112,7 @@ class ThresholdTuner:
                 ),
                 go.Scatter(
                     x=np.arange(self.max_cpts),
-                    y=np.repeat(self.detector.test.threshold, self.max_cpts),
+                    y=np.repeat(self.detector.estimator.penalty, self.max_cpts),
                     mode="lines",
                     line_dash="dot",
                     name="Tuned threshold",
