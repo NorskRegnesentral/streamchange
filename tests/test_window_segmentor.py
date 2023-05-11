@@ -1,13 +1,14 @@
 from river.stream import iter_pandas
 
 from streamchange.amoc import CUSUM, WindowSegmentor
+from streamchange.penalties import BIC
 from streamchange.data import simulate
 
 
 def test_accuracy():
     seg_len = 100
     df = simulate([0, 30], [seg_len], p=1, seed=2)
-    estimator = CUSUM(penalty=10)
+    estimator = CUSUM(penalty=BIC(scale=10))
     detector = WindowSegmentor(estimator, 4, 100)
     cpts = []
     for t, (x, _) in enumerate(iter_pandas(df)):
