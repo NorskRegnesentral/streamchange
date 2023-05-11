@@ -1,4 +1,5 @@
 import abc
+from numbers import Number
 from typing import Tuple
 import numpy as np
 from numba import njit
@@ -127,7 +128,9 @@ class AMOCEstimator:
 
 
 class SeparableAMOCEstimator(AMOCEstimator):
-    def __init__(self, penalty: ConstantPenalty = BIC()):
+    def __init__(self, penalty: Tuple[ConstantPenalty, Number] = BIC()):
+        if isinstance(penalty, Number):
+            penalty = ConstantPenalty(penalty)
         self.penalty = penalty
         self.reset()
 
