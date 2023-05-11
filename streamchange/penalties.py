@@ -19,6 +19,8 @@ class Penalty:
 class ConstantPenalty(Penalty):
     def __init__(self, value, scale=1.0):
         super().__init__(scale)
+        if value < 0:
+            raise ValueError("The ConstantPenalty value must be >= 0.")
         self.value = value
 
     def _penalty(self, affected_size=None):
@@ -36,6 +38,10 @@ class BIC(ConstantPenalty):
 class LinearPenalty(Penalty):
     def __init__(self, intercept, slope, scale=1.0):
         super().__init__(scale)
+        if intercept < 0:
+            raise ValueError("The LinearPenalty intercept must be >= 0.")
+        if slope < 0:
+            raise ValueError("The LinearPenalty slope must be >= 0.")
         self.intercept = intercept
         self.slope = slope
 
@@ -51,6 +57,8 @@ class LinearConstPenalty(Penalty):
         self.constant_value = constant_value
         self.intercept = intercept
         self.slope = slope
+        self._constant_penalty = ConstantPenalty(constant_value)
+        self._linear_penalty = LinearPenalty(intercept, slope)
         self.transition_point = (
             ((constant_value - intercept) / slope if slope > 0 else 0)
             if transition_point is None
@@ -59,6 +67,6 @@ class LinearConstPenalty(Penalty):
 
     def _penalty(self, affected_size):
         if affected_size <= self.transition_point:
-            return self.intercept + affected_size * self.slope
+            return self._linear_penalty(affected_size)
         else:
-            return self.constant_value
+            return self._constant_penalty()
