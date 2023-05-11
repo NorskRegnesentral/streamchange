@@ -1,11 +1,13 @@
 from river.stream import iter_pandas
 
 from streamchange.amoc import SumCUSUM, MaxCUSUM, WindowSegmentor
+from streamchange.penalties import BIC
 from streamchange.data import simulate
 from streamchange.utils import Profiler
 
-df = simulate([0, 10, 0], [1000], p=2)
-estimator = MaxCUSUM(p=df.shape[1])
+p = 2
+df = simulate([0, 10, 0], [1000], p=p)
+estimator = SumCUSUM(BIC(p=p))
 detector = WindowSegmentor(estimator, 4, 100, minsl=4, with_jumpback=True)
 
 cpts = []

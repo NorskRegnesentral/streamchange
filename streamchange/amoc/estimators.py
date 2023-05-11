@@ -1,8 +1,9 @@
 import abc
-from typing import Tuple, Callable
-import numbers
+from typing import Tuple
 import numpy as np
 from numba import njit
+
+from ..penalties import ConstantPenalty, BIC
 
 
 @njit
@@ -21,38 +22,38 @@ def cusum_transform(x: np.ndarray, t: np.ndarray) -> np.ndarray:
 
 
 @njit
-def _optim(cusum: np.ndarray, t: np.ndarray):
-    argmax = cusum.argmax()
-    return cusum[argmax], t[argmax]
+def _optim(cpt_scores: np.ndarray, t: np.ndarray):
+    argmax = cpt_scores.argmax()
+    return cpt_scores[argmax], t[argmax]
 
 
 @njit
 def optim_univariate_cusum(x: np.ndarray, t: np.ndarray):
     cusum = univariate_cusum_transform(x, t)
-    abs_cusum = np.abs(cusum)
-    return _optim(abs_cusum, t)
+    return _optim(cusum**2, t)
 
 
 @njit
 def optim_univariate_cusum0(x: np.ndarray, t: np.ndarray):
     sums = np.cumsum(x)
-    abs_cusum = np.abs(sums[t - 1] / np.sqrt(t))
-    return _optim(abs_cusum, t)
+    cusum = sums[t - 1] / np.sqrt(t)
+    return _optim(cusum**2, t)
 
 
 @njit
 def optim_sum_cusum(x: np.ndarray, t: np.ndarray):
     cusum = cusum_transform(x, t)
-    agg_cusum = np.abs(cusum).sum(axis=1)
+    agg_cusum = (cusum**2).sum(axis=1)
     return _optim(agg_cusum, t)
 
 
 @njit
 def optim_max_cusum(x: np.ndarray, t: np.ndarray):
-    abs_cusum = np.abs(cusum_transform(x, t))
+    cusum = cusum_transform(x, t)
+    cusum2 = cusum**2
     agg_cusum = np.zeros(t.size)
     for i in range(t.size):
-        agg_cusum[i] = abs_cusum[i, :].max()
+        agg_cusum[i] = cusum2[i, :].max()
     # TODO: When njit-able: agg_cusum = np.abs(cusum).max(axis=1).
     return _optim(agg_cusum, t)
 
@@ -86,6 +87,14 @@ class AMOCEstimator:
         """
         return self._changepoint
 
+    @abc.abstractmethod
+    def _fit(
+        self,
+        x: np.ndarray,
+        candidate_cpts: np.ndarray = None,
+    ) -> Tuple[float, int]:
+        """Subclass-specific method for detecting a single changepoint"""
+
     def fit(self, x: np.ndarray, candidate_cpts: np.ndarray = None) -> "AMOCEstimator":
         """Detect whether there is at least one changepoint in a data vector.
 
@@ -116,57 +125,51 @@ class AMOCEstimator:
             self._score, self._changepoint = self._fit(x, candidate_cpts)
         return self
 
-    @abc.abstractmethod
-    def _fit(
-        self,
-        x: np.ndarray,
-        candidate_cpts: np.ndarray = None,
-    ) -> Tuple[float, int]:
-        """Subclass-specific method for detecting a single changepoint"""
 
+class SeparableAMOCEstimator(AMOCEstimator):
+    def __init__(self, penalty: ConstantPenalty = BIC()):
+        self.penalty = penalty
+        self.reset()
 
-class CUSUM(AMOCEstimator):
-    def __init__(
-        self,
-        penalty: numbers.Number = None,
-        arl: int = 10000,
-        p=1,
-    ):
-        super().__init__()
-        self.arl = arl
-        self.p = p
-        self.penalty = self.default_penalty(arl, p) if penalty is None else penalty
+    def reset(self):
+        super().reset()
+        self._raw_score = 0.0
+
+    @property
+    def raw_score(self) -> float:
+        return self._raw_score
 
     @staticmethod
-    def default_penalty(n: int, p: int = 1) -> float:
-        """Default penalty as function of n and p"""
-        return np.sqrt(2.0 * p * np.log(n))
-
-    def _fit_cusum(self, x, candidate_cpts, optimiser: Callable):
-        score, cpt = optimiser(x, candidate_cpts)
-        score = score - self.penalty
-        return score, cpt
+    @abc.abstractmethod
+    def _changepoint_optimiser(x, candidate_cpts):
+        pass
 
     def _fit(self, x, candidate_cpts):
-        optimiser = optim_univariate_cusum
-        return self._fit_cusum(x, candidate_cpts, optimiser)
+        self._raw_score, cpt = self._changepoint_optimiser(x, candidate_cpts)
+        return self.raw_score - self.penalty(), cpt
 
 
-class CUSUM0(CUSUM):
+class CUSUM(SeparableAMOCEstimator):
+    @staticmethod
+    def _changepoint_optimiser(x, candidate_cpts):
+        return optim_univariate_cusum(x, candidate_cpts)
+
+
+class CUSUM0(SeparableAMOCEstimator):
     _minsl_before = 0
 
-    def _fit(self, x, candidate_cpts):
-        optimiser = optim_univariate_cusum0
-        return self._fit_cusum(x, candidate_cpts, optimiser)
+    @staticmethod
+    def _changepoint_optimiser(x, candidate_cpts):
+        return optim_univariate_cusum0(x, candidate_cpts)
 
 
-class SumCUSUM(CUSUM):
-    def _fit(self, x, candidate_cpts):
-        optimiser = optim_sum_cusum
-        return self._fit_cusum(x, candidate_cpts, optimiser)
+class SumCUSUM(SeparableAMOCEstimator):
+    @staticmethod
+    def _changepoint_optimiser(x, candidate_cpts):
+        return optim_sum_cusum(x, candidate_cpts)
 
 
-class MaxCUSUM(CUSUM):
-    def _fit(self, x, candidate_cpts):
-        optimiser = optim_max_cusum
-        return self._fit_cusum(x, candidate_cpts, optimiser)
+class MaxCUSUM(SeparableAMOCEstimator):
+    @staticmethod
+    def _changepoint_optimiser(x, candidate_cpts):
+        return optim_max_cusum(x, candidate_cpts)
