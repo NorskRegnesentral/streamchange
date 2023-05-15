@@ -1,4 +1,6 @@
 import numpy as np
+import pandas as pd
+from river.stream import iter_pandas
 
 from ..base import ChangeDetector, NumpyDeque
 from ..utils import geomspace_int
@@ -113,3 +115,21 @@ class WindowSegmentor(ChangeDetector):
                     end = start - self.min_window + 1
             end -= 1
         return self
+
+    def fit(self, x: pd.DataFrame = None) -> "WindowSegmentor":
+        return self
+
+    def predict(self, x: pd.DataFrame) -> list:
+        self.reset()
+        x = x.dropna()
+        times = x.index
+        x = x.reset_index(drop=True)
+        cpts = []
+        for t, x_t in x.to_dict(orient="index").items():
+            self.update(x_t)
+            if self.change_detected:
+                cpts += [t - cpt for cpt in self.changepoints]
+        return times[cpts].tolist()
+
+    def fit_predict(self, x: pd.DataFrame) -> list:
+        return self.fit(x).predict(x)
