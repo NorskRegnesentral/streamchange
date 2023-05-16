@@ -9,11 +9,11 @@ class Penalty:
         self.scale = scale
 
     @abc.abstractmethod
-    def _penalty(self, affected_size: int) -> float:
+    def default_penalty(self, affected_size: int) -> float:
         pass
 
     def __call__(self, affected_size: int = 1) -> float:
-        return self.scale * self._penalty(affected_size)
+        return self.scale * self.default_penalty(affected_size)
 
 
 class ConstantPenalty(Penalty):
@@ -23,7 +23,7 @@ class ConstantPenalty(Penalty):
             raise ValueError("The ConstantPenalty value must be >= 0.")
         self.value = value
 
-    def _penalty(self, affected_size=None):
+    def default_penalty(self, affected_size=None):
         return self.value
 
 
@@ -45,7 +45,7 @@ class LinearPenalty(Penalty):
         self.intercept = intercept
         self.slope = slope
 
-    def _penalty(self, affected_size):
+    def default_penalty(self, affected_size):
         return self.intercept + affected_size * self.slope
 
 
@@ -65,7 +65,7 @@ class LinearConstPenalty(Penalty):
             else transition_point
         )
 
-    def _penalty(self, affected_size):
+    def default_penalty(self, affected_size):
         if affected_size <= self.transition_point:
             return self._linear_penalty(affected_size)
         else:
