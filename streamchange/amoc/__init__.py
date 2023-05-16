@@ -7,7 +7,11 @@ from .estimators import (
     MaxCUSUM,
     cusum_transform,
 )
-from .threshold_tuner import ThresholdTuner, base_selector
+from .penalty_tuners import (
+    PenaltyTuner,
+    OptunaPenaltyTuner,
+    base_selector,
+)
 
 __all__ = [
     "WindowSegmentor",
@@ -17,6 +21,7 @@ __all__ = [
     "SumCUSUM",
     "MaxCUSUM",
     "cusum_transform",
-    "ThresholdTuner",
+    "PenaltyTuner",
+    "OptunaPenaltyTuner",
     "base_selector",
 ]
