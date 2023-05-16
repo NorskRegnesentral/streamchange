@@ -37,6 +37,8 @@ def base_selector(alpha=0.0):
 
 
 # TODO: Update ThresholdTuner with new cpt definition and new WindowSegmentor
+# TODO: Update to new Penalty objects.
+# TODO: Make show similar to OptunaPenaltyTuner
 
 
 class PenaltyTuner:
