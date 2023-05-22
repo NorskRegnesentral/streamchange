@@ -8,9 +8,12 @@ from .estimators import (
     cusum_transform,
 )
 from .penalty_tuners import (
-    PenaltyTuner,
+    SeparablePenaltyTuner,
     OptunaPenaltyTuner,
-    base_selector,
+    RandomIntervalMaker,
+    StepwiseIntervalMaker,
+    DyadicIntervalMaker,
+    targetscaler,
 )
 
 __all__ = [
@@ -21,7 +24,10 @@ __all__ = [
     "SumCUSUM",
     "MaxCUSUM",
     "cusum_transform",
-    "PenaltyTuner",
+    "SeparablePenaltyTuner",
     "OptunaPenaltyTuner",
-    "base_selector",
+    "RandomIntervalMaker",
+    "StepwiseIntervalMaker",
+    "DyadicIntervalMaker",
+    "targetscaler",
 ]

@@ -6,67 +6,164 @@ import plotly.express as px
 import optuna
 import multiprocessing
 import copy
+from typing import Tuple
 
 from .window_segmentor import WindowSegmentor
+from .estimators import SeparableAMOCEstimator
 
 
 @njit
-def generate_intervals(
-    data_size: int,
+def make_random_intervals(
+    n: int,
     min_window: int,
     max_window: int,
     prob: float = 1.0,
-):
+) -> Tuple[np.ndarray, np.ndarray]:
     starts = []
     ends = []
-    for end in range(min_window, data_size):
-        min_start = max(0, end - max_window)
-        max_start = end - min_window + 1
-        for start in range(min_start, max_start):
+    ends_range = range(0, n - min_window)
+    starts_range = range(min_window, max_window + 1)
+    for end in ends_range:
+        for start in starts_range:
             if np.random.uniform(0.0, 1.0) <= prob:
-                starts.append(start)
                 ends.append(end)
+                starts.append(end + start)
+    starts = np.array(starts)
+    ends = np.array(ends)
+    starts = starts[starts <= n]
+    ends = ends[starts <= n]
+    return starts, ends
+
+
+@njit
+def make_stepwise_intervals(
+    n: int,
+    min_window: int,
+    max_window: int,
+    step: int = 1,
+) -> Tuple[np.ndarray, np.ndarray]:
+    starts = []
+    ends = []
+    ends_range = range(0, n - min_window)
+    starts_range = range(min_window, max_window + 1, step)
+    for end in ends_range:
+        for start in starts_range:
+            ends.append(end)
+            starts.append(end + start)
+    starts = np.array(starts)
+    ends = np.array(ends)
+    starts = starts[starts <= n]
+    ends = ends[starts <= n]
+    return starts, ends
+
+
+@njit
+def make_dyadic_intervals(
+    n: int,
+    min_window: int,
+    max_window: int,
+    alpha: float = 1.5,
+    step_proportion: int = 0.25,
+) -> Tuple[np.ndarray, np.ndarray]:
+    starts = []
+    ends = []
+    interval_length = min_window
+    while interval_length <= max_window:
+        step = max(1, np.floor(step_proportion * interval_length))
+        i = 0
+        while i * step + interval_length <= n:
+            ends.append(int(i * step))
+            starts.append(int(i * step + interval_length))
+            i += 1
+        interval_length = max(interval_length + 1, np.floor(alpha * interval_length))
     return np.array(starts), np.array(ends)
 
 
-def base_selector(alpha=0.0):
-    def selector(thresholds):
-        return max((1 + alpha) * thresholds[-1], 1e-8)
+def targetscaler(alpha=1.0):
+    def selector(penalties):
+        return max(alpha * penalties[-1], 1e-8)
 
     return selector
 
 
-# TODO: Update ThresholdTuner with new cpt definition and new WindowSegmentor
-# TODO: Update to new Penalty objects.
-# TODO: Make show similar to OptunaPenaltyTuner
+class RandomIntervalMaker:
+    def __init__(self, prob: float):
+        self.prob = prob
+
+    def __call__(self, n: int, min_window: int, max_window: int):
+        return make_random_intervals(n, min_window, max_window, self.prob)
 
 
-class PenaltyTuner:
+class StepwiseIntervalMaker:
+    def __init__(self, step: float):
+        self.step = step
+
+    def __call__(self, n: int, min_window: int, max_window: int):
+        return make_stepwise_intervals(n, min_window, max_window, self.step)
+
+
+class DyadicIntervalMaker:
+    def __init__(self, alpha: float = 1.5, step_proportion: int = 3):
+        self.alpha = alpha
+        self.step_proportion = step_proportion
+
+    def __call__(self, n: int, min_window: int, max_window: int):
+        return make_dyadic_intervals(
+            n, min_window, max_window, self.alpha, self.step_proportion
+        )
+
+
+class SeparablePenaltyTuner:
     """
     Class for tuning WindowSegmentor detectors with SeparableAMOCEstimators.
+
+    Parameters
+    ----------
+    detector :
+        WindowSegmentor to tune.
+
+    target_cpts:
+        Target number of changepoints to be detected in the training data.
+
     """
 
     def __init__(
         self,
         detector: WindowSegmentor,
-        max_cpts: int = 1000,
-        prob: float = 1.0,
-        max_window_only=True,
-        selector=base_selector(),
+        target_cpts: int = 1,
+        interval_generator="dyadic",
+        prob: float = 0.1,
+        step: int = 5,
+        alpha=1.5,
+        step_proportion=0.25,
+        selector=targetscaler(alpha=1.0),
     ):
         self.detector = detector
-        self.max_cpts = max_cpts
+        self.target_cpts = target_cpts
+        self.interval_generator = interval_generator
         self.prob = prob
-        self.max_window_only = max_window_only
+        self.step = step
+        self.alpha = alpha
+        self.step_proportion = step_proportion
         self.selector = selector
+        self._set_interval_maker()
 
-    def fit(self, x: pd.DataFrame):
-        if x.shape[0] < self.max_cpts:
-            raise ValueError("x must contain more rows than max_cpts.")
+        if not isinstance(self.detector.estimator, SeparableAMOCEstimator):
+            raise ValueError(
+                "Only WindowSegmentors with 'SeparableAMOCEstimators' can be tuned with PenaltyTuner. See OptunaPenaltyTuner for a more generic alternative"
+            )
 
-        self.x = x.to_numpy()
-        self._find_thresholds()
-        self.detector.estimator.penalty = self.selector(self.thresholds)
+    def _set_interval_maker(self):
+        if self.interval_generator == "random":
+            self._make_intervals = RandomIntervalMaker(self.prob)
+        elif self.interval_generator == "stepwise":
+            self._make_intervals = StepwiseIntervalMaker(self.step)
+        elif self.interval_generator == "dyadic":
+            self._make_intervals = DyadicIntervalMaker(self.alpha, self.step_proportion)
+        else:
+            permitted_generators = ["random", "stepwise", "dyadic"]
+            permitted_str = ", ".join(permitted_generators)
+            raise ValueError(f"interval_generator must be one of {permitted_str}")
 
     def _detect_in(self, starts: list, ends: list):
         """
@@ -76,53 +173,69 @@ class PenaltyTuner:
         scores = []
         cpts = []
         for start, end in zip(starts, ends):
-            candidate_cpts = self.detector.candidate_cpts[
-                self.detector.candidate_cpts < end - start
-            ]
-            self.detector.estimator.fit(self.x[start:end], candidate_cpts)
+            candidate_cpts = self.detector.candidate_cpts
+            candidate_cpts = candidate_cpts[candidate_cpts < start - end]
+            self.detector.estimator.fit(self.x[end:start], candidate_cpts)
             scores.append(self.detector.estimator.score)
-            cpts.append(start + self.detector.estimator.changepoint - 1)
+            cpts.append(end + self.detector.estimator.changepoint)
         return np.array(scores), np.array(cpts)
 
-    def _find_thresholds(self) -> np.ndarray:
-        max_window = self.detector.max_window
-        min_window = max_window if self.max_window_only else self.detector.min_window
-        n = self.x.shape[0]
-        starts, ends = generate_intervals(n, min_window, max_window, self.prob)
+    def _find_penalties(self) -> np.ndarray:
+        starts, ends = self._make_intervals(
+            self.x.shape[0],
+            self.detector.min_window,
+            self.detector.max_window,
+        )
         scores, cpts = self._detect_in(starts, ends)
-
-        self.thresholds = np.zeros(self.max_cpts)
+        self.penalties = np.zeros(self.target_cpts)
         i = 0
-        while (i < self.max_cpts) & np.any(scores > 0.0):
+        while (i < self.target_cpts) & np.any(scores > 0.0):
             argmax = scores.argmax()
-            self.thresholds[i] = scores[argmax]
+            self.penalties[i] = scores[argmax]
             max_cpt = cpts[argmax]
-            cpt_in_interval = (max_cpt >= starts) & (max_cpt < ends)
+            cpt_in_interval = (max_cpt >= ends) & (max_cpt < starts)
             scores[cpt_in_interval] = 0.0
             i += 1
 
+    def fit(self, x: pd.DataFrame):
+        if x.shape[0] < self.target_cpts:
+            raise ValueError("x must contain more rows than target_cpts.")
+
+        if not x.index.is_monotonic_increasing:
+            x = x.sort_index()
+
+        # The smaller index means more recent throughout streamchange, thus reverse.
+        self.x = x.to_numpy()[::-1]
+        self._find_penalties()
+        penalty = self.selector(self.penalties)
+        penalty_scale_ = penalty / self.detector.estimator.penalty.default_penalty()
+        self.penalty_scale_ = penalty_scale_
+        self.detector.estimator.penalty.scale = penalty_scale_
+
     def show(self, title="") -> go:
+        # TODO: Make show similar to OptunaPenaltyTuner
+
         fig = go.Figure(
             layout=go.Layout(
                 title=title,
                 xaxis_title="Number of changepoints",
-                yaxis_title="Threshold",
+                yaxis_title="Penalty",
             )
         )
         fig.add_traces(
             [
                 go.Scatter(
-                    x=np.arange(self.max_cpts),
-                    y=self.thresholds,
+                    x=np.arange(self.target_cpts),
+                    y=self.penalties,
                     mode="markers",
-                    name="Threshold series",
+                    name="Penalty series",
                 ),
                 go.Scatter(
-                    x=np.arange(self.max_cpts),
-                    y=np.repeat(self.detector.estimator.penalty, self.max_cpts),
+                    x=np.arange(self.target_cpts),
+                    y=np.repeat(self.detector.estimator.penalty(), self.target_cpts),
                     mode="lines",
                     line_dash="dot",
-                    name="Tuned threshold",
+                    name="Tuned penalty",
                 ),
             ]
         )
