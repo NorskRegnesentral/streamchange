@@ -6,8 +6,6 @@ from ..base import ChangeDetector, NumpyDeque
 from ..utils import geomspace_int
 from .estimators import BaseAMOCEstimator
 
-# TODO: Add fit and predict like in Capa.
-
 
 class WindowSegmentor(ChangeDetector):
     """
@@ -38,16 +36,17 @@ class WindowSegmentor(ChangeDetector):
         self,
         estimator: BaseAMOCEstimator,
         min_window: int = 2,
-        max_window: int = np.inf,
+        max_window: int = int(1e5),
         minsl: int = 1,
         candidate_type: str = "linear",
         candidate_step: float = 1,
         with_jumpback: bool = True,
     ):
         self.estimator = estimator
-        self.min_window, self.max_window, self.minsl = self._validate_window(
-            min_window, max_window, minsl
-        )
+        self._validate_window(min_window, max_window, minsl)
+        self.min_window = min_window
+        self.max_window = max_window
+        self.minsl = minsl
         self.candidate_type = candidate_type
         self.candidate_step = candidate_step
         self.with_jumpback = with_jumpback
@@ -59,6 +58,7 @@ class WindowSegmentor(ChangeDetector):
         super().reset()
 
     def reset(self) -> "WindowSegmentor":
+        self.last_changepoint = 0
         self._reset_changepoints()
         self.estimator.reset()
         self.window.reset()
@@ -70,12 +70,18 @@ class WindowSegmentor(ChangeDetector):
         if min_window > max_window:
             raise ValueError("min_window cannot be greater than max_window.")
         if minsl < max(self.estimator._minsl_before, self.estimator._minsl_after):
-            message = "minsl cannot be smaller than the strictest minsl restriction in the AMOC estimator."
-            raise ValueError(message)
-        if minsl > max_window:
-            raise ValueError("minsl cannot be greater than max_window.")
+            msg = "minsl cannot be smaller than the strictest minsl restriction in the AMOC estimator."
+            raise ValueError(msg)
 
-        return min_window, max_window, minsl
+        is_onesided_estimator = (
+            self.estimator._minsl_after == 0 or self.estimator._minsl_before == 0
+        )
+        if is_onesided_estimator and minsl > max_window:
+            msg = "minsl cannot be greater than max_window for one-sided AMOC estimators. "
+            raise ValueError(msg)
+        elif not is_onesided_estimator and minsl > max_window / 2:
+            msg = "minsl cannot be greater than max_window/2 for two-sided AMOC estimators."
+            raise ValueError(msg)
 
     def _make_candidate_cpts(self):
         # Candidate changepoints only run till n-1 to avoid the same changepoint
@@ -102,26 +108,33 @@ class WindowSegmentor(ChangeDetector):
 
         return candidate_cpts
 
+    def _get_valid_candidate_cpts(self, window_length):
+        minsl_boundary = self.last_changepoint - self.minsl + 1
+        valid_candidates = self.candidate_cpts < min(minsl_boundary, window_length)
+        return self.candidate_cpts[valid_candidates]
+
     def update(self, x):
         if self.change_detected:
             self.window.pop(len(self.window) - self.changepoints[-1])
         self.window.appendleft(x)
+        self.last_changepoint = min(self.last_changepoint + 1, int(1e8))
         self._reset_changepoints()
 
         start = len(self.window)
         end = min(0, start - self.min_window)
         while end >= 0:
             window_values = self.window.values[end:start]
-            n = window_values.shape[0]
-            candidate_cpts = self.candidate_cpts[self.candidate_cpts < n]
+            candidate_cpts = self._get_valid_candidate_cpts(start - end)
             self.estimator.fit(window_values, candidate_cpts)
             if self.estimator.change_detected:
                 cpt = self.estimator.changepoint
                 self._changepoints.append(cpt)
+                self.last_changepoint = cpt
                 if self.with_jumpback:
                     start = cpt
                     end = start - self.min_window + 1
             end -= 1
+
         return self
 
     def fit(self, x: pd.DataFrame) -> "WindowSegmentor":
