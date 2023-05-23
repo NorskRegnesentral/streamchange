@@ -124,10 +124,7 @@ class WindowSegmentor(ChangeDetector):
             end -= 1
         return self
 
-    def fit(self, x: pd.DataFrame = None) -> "WindowSegmentor":
-        return self
-
-    def predict(self, x: pd.DataFrame) -> list:
+    def fit(self, x: pd.DataFrame) -> "WindowSegmentor":
         self.reset()
         x = x.dropna()
         times = x.index
@@ -137,7 +134,20 @@ class WindowSegmentor(ChangeDetector):
             self.update(x_t)
             if self.change_detected:
                 cpts += [t - cpt for cpt in self.changepoints]
-        return times[cpts].tolist()
+        self.changepoints_ = times[cpts].tolist()
+        return self
+
+    def _check_is_fitted(self):
+        if not hasattr(self, "changepoints_"):
+            msg = f"This instance of {type(self).__name__} is not fitted yet."
+            raise RuntimeError(msg)
+
+    def predict(self, x: pd.DataFrame = None) -> list:
+        if x is None:
+            return self.changepoints_
+        else:
+            # TODO: Complete
+            raise RuntimeError("Prediction for new observation is not implemented yet.")
 
     def fit_predict(self, x: pd.DataFrame) -> list:
-        return self.fit(x).predict(x)
+        return self.fit(x).predict()
