@@ -146,9 +146,9 @@ class BasePenaltyTuner:
         return fig
 
 
-class SeparablePenaltyTuner(BasePenaltyTuner):
+class AMOCPenaltyTuner(BasePenaltyTuner):
     """
-    Class for tuning WindowSegmentor detectors with SeparableAMOCEstimators.
+    Class for tuning the penalty of an AMOCEstimator in WindowSegmentor.
 
     Parameters
     ----------
@@ -180,11 +180,6 @@ class SeparablePenaltyTuner(BasePenaltyTuner):
         self.step_proportion = step_proportion
         self.selector = selector
         self._set_interval_maker()
-
-        if not isinstance(self.detector.estimator, SeparableAMOCEstimator):
-            raise ValueError(
-                "Only WindowSegmentors with 'SeparableAMOCEstimators' can be tuned with PenaltyTuner. See OptunaPenaltyTuner for a more generic alternative"
-            )
 
     def _set_interval_maker(self):
         if self.interval_generator == "random":
@@ -233,12 +228,15 @@ class SeparablePenaltyTuner(BasePenaltyTuner):
             i += 1
         return penalties
 
-    def fit(self, x: pd.DataFrame) -> "SeparablePenaltyTuner":
+    def fit(self, x: pd.DataFrame) -> "AMOCPenaltyTuner":
         if x.shape[0] < self.target_cpts:
             raise ValueError("x must contain more rows than target_cpts.")
 
         if not x.index.is_monotonic_increasing:
             x = x.sort_index()
+
+        # Non-penalised scores are used to find suitable penalties.
+        self.detector.estimator.penalty.scale = 0
 
         # The smaller index means more recent throughout streamchange, thus reverse.
         self.x = x.to_numpy()[::-1]
@@ -356,7 +354,8 @@ class OptunaPenaltyTuner(BasePenaltyTuner):
         return results
 
     def _interpolate_summary(self) -> pd.DataFrame:
-        results = self.summarise()
+        results = pd.DataFrame(self._summarise())
+        results = results.sort_values("penalty_scale").reset_index(drop=True)
         unique_results = (
             results.groupby("cpt_count")
             .apply(lambda x: x.iloc[x.penalty_scale.argmin()])

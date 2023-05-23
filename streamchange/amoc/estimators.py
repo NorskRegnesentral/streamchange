@@ -4,7 +4,7 @@ from typing import Tuple
 import numpy as np
 from numba import njit
 
-from ..penalties import ConstantPenalty, BIC
+from ..penalties import BasePenalty, ConstantPenalty, BIC
 
 
 @njit
@@ -59,11 +59,14 @@ def optim_max_cusum(x: np.ndarray, t: np.ndarray):
     return _optim(agg_cusum, t)
 
 
-class AMOCEstimator:
+class BaseAMOCEstimator:
     _minsl_before = 1
     _minsl_after = 1
 
-    def __init__(self):
+    def __init__(self, penalty: Tuple[BasePenalty, Number]):
+        if isinstance(penalty, Number):
+            penalty = ConstantPenalty(penalty)
+        self.penalty = penalty
         self.reset()
 
     def reset(self):
@@ -96,7 +99,9 @@ class AMOCEstimator:
     ) -> Tuple[float, int]:
         """Subclass-specific method for detecting a single changepoint"""
 
-    def fit(self, x: np.ndarray, candidate_cpts: np.ndarray = None) -> "AMOCEstimator":
+    def fit(
+        self, x: np.ndarray, candidate_cpts: np.ndarray = None
+    ) -> "BaseAMOCEstimator":
         """Detect whether there is at least one changepoint in a data vector.
 
         Should set the self._change_detected and self._changepoint variables.
@@ -127,12 +132,9 @@ class AMOCEstimator:
         return self
 
 
-class SeparableAMOCEstimator(AMOCEstimator):
+class SeparableAMOCEstimator(BaseAMOCEstimator):
     def __init__(self, penalty: Tuple[ConstantPenalty, Number] = BIC()):
-        if isinstance(penalty, Number):
-            penalty = ConstantPenalty(penalty)
-        self.penalty = penalty
-        self.reset()
+        super().__init__(penalty)
 
     def reset(self):
         super().reset()

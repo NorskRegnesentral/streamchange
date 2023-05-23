@@ -2,7 +2,7 @@ import abc
 import numpy as np
 
 
-class Penalty:
+class BasePenalty:
     def __init__(self, scale: float = 1.0):
         if scale < 0:
             raise ValueError("scale must be >= 0.")
@@ -16,7 +16,7 @@ class Penalty:
         return self.scale * self.default_penalty(affected_size)
 
 
-class ConstantPenalty(Penalty):
+class ConstantPenalty(BasePenalty):
     def __init__(self, value, scale=1.0):
         super().__init__(scale)
         if value < 0:
@@ -35,7 +35,7 @@ class BIC(ConstantPenalty):
         super().__init__(value, scale)
 
 
-class LinearPenalty(Penalty):
+class LinearPenalty(BasePenalty):
     def __init__(self, intercept, slope, scale=1.0):
         super().__init__(scale)
         if intercept < 0:
@@ -49,7 +49,7 @@ class LinearPenalty(Penalty):
         return self.intercept + affected_size * self.slope
 
 
-class LinearConstPenalty(Penalty):
+class LinearConstPenalty(BasePenalty):
     def __init__(
         self, constant_value, intercept, slope, transition_point=None, scale=1.0
     ):

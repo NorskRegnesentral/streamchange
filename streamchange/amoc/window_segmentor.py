@@ -4,7 +4,7 @@ from river.stream import iter_pandas
 
 from ..base import ChangeDetector, NumpyDeque
 from ..utils import geomspace_int
-from .estimators import AMOCEstimator
+from .estimators import BaseAMOCEstimator
 
 # TODO: Add fit and predict like in Capa.
 
@@ -28,7 +28,7 @@ class WindowSegmentor(ChangeDetector):
 
     def __init__(
         self,
-        estimator: AMOCEstimator,
+        estimator: BaseAMOCEstimator,
         min_window: int = 2,
         max_window: int = np.inf,
         minsl: int = 1,

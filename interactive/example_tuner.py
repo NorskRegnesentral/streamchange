@@ -1,16 +1,11 @@
 from river.stream import iter_pandas
 
-from streamchange.amoc import (
-    CUSUM,
-    WindowSegmentor,
-    SeparablePenaltyTuner,
-)
+from streamchange.amoc import CUSUM, WindowSegmentor, AMOCPenaltyTuner
 from streamchange.data import simulate
 
 df = simulate([0, 10, 0], [10000], p=1)
 detector = WindowSegmentor(CUSUM(), 4, 100)
-# tuner = SeparablePenaltyTuner(detector, target_cpts=100, interval_generator="stepwise")
-tuner = SeparablePenaltyTuner(detector, target_cpts=100, interval_generator="dyadic")
+tuner = AMOCPenaltyTuner(detector, target_cpts=100, interval_generator="dyadic")
 tuner.fit(df)
 tuner.show()
 

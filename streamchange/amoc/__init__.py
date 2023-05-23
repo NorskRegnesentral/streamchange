@@ -1,6 +1,7 @@
 from .window_segmentor import WindowSegmentor
 from .estimators import (
-    AMOCEstimator,
+    BaseAMOCEstimator,
+    SeparableAMOCEstimator,
     CUSUM,
     CUSUM0,
     SumCUSUM,
@@ -8,7 +9,7 @@ from .estimators import (
     cusum_transform,
 )
 from .penalty_tuners import (
-    SeparablePenaltyTuner,
+    AMOCPenaltyTuner,
     OptunaPenaltyTuner,
     RandomIntervalMaker,
     StepwiseIntervalMaker,
@@ -18,13 +19,14 @@ from .penalty_tuners import (
 
 __all__ = [
     "WindowSegmentor",
-    "AMOCEstimator",
+    "BaseAMOCEstimator",
+    "SeparableAMOCEstimator",
     "CUSUM",
     "CUSUM0",
     "SumCUSUM",
     "MaxCUSUM",
     "cusum_transform",
-    "SeparablePenaltyTuner",
+    "AMOCPenaltyTuner",
     "OptunaPenaltyTuner",
     "RandomIntervalMaker",
     "StepwiseIntervalMaker",
