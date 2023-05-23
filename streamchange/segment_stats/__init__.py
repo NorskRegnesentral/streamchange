@@ -4,6 +4,6 @@ from .stat_union import StatUnion
 
 __all__ = [
     "BaseSegmentStat",
-    "StatStatBuffer",
+    "StatBuffer",
     "StatUnion",
 ]
