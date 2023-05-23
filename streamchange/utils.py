@@ -20,6 +20,11 @@ def geomspace_int(start: int, stop: int, step: float = 2.0) -> np.ndarray:
     return np.array(values)
 
 
+def has_method(obj, method_name):
+    method = getattr(obj, method_name, None)
+    return callable(method)
+
+
 class Profiler:
     def __init__(self):
         self.pr = cProfile.Profile()

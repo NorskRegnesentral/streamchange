@@ -1,9 +1,9 @@
-from .base import SegmentStat
+from .base import BaseSegmentStat
 from .stat_buffer import StatBuffer
 from .stat_union import StatUnion
 
 __all__ = [
-    "SegmentStat",
+    "BaseSegmentStat",
     "StatStatBuffer",
     "StatUnion",
 ]

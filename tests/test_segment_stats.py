@@ -14,16 +14,16 @@ def test_StatBuffer_mean():
     for _, x in series.items():
         stat.update(x)
 
-    assert stat.get() == stat.get(-1)
+    assert stat.get() == stat.get(0)
     assert stat.get() >= -1 and stat.get() <= 1
     with pytest.raises(IndexError):
-        stat.get(-stat.max_history - 1)
+        stat.get(stat.max_history)
 
     stat.reset()
     assert abs(stat.get()) < 1e-8
     stat.update(1.0)
     with pytest.raises(IndexError):
-        stat.get(-2)
+        stat.get(1)
 
 
 def test_stat_union():
@@ -33,11 +33,10 @@ def test_stat_union():
     for _, x in series.items():
         stat.update(x)
 
-    # assert stat[-1] == stat.get(-1)
     with pytest.raises(IndexError):
-        stat.get(-stat.max_history - 1)
+        stat.get(stat.max_history)
 
     stat.reset()
     stat.update(1.0)
     with pytest.raises(IndexError):
-        stat.get(-2)
+        stat.get(1)
