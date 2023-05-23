@@ -21,6 +21,14 @@ class WindowSegmentor(ChangeDetector):
         The minimum length of the window to test for changepoints in.
     max_window
         The maximum length of the window to test for changepoints in.
+    minsl
+        The minimum segment length.
+    candidate_type
+        The type of candidate changepoints set. Must be either "linear" or "geom".
+    candidate_step
+        The step size of the candidate changepoint set. If candidate_type=="geom",
+        the step size is the factor to multiply the previous changepoint with to
+        generate the set, and it must therefore be > 1.
     with_jumpback
         Upon detection of a changepoint, whether to jump back to a minimum
         length window starting right after the changepoints.
