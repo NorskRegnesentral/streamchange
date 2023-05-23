@@ -1,12 +1,13 @@
+import abc
+import copy
 import pandas as pd
 import numpy as np
+import optuna
+import multiprocessing
+from typing import Tuple, Callable
 from numba import njit
 import plotly.graph_objects as go
 import plotly.express as px
-import optuna
-import multiprocessing
-import copy
-from typing import Tuple
 
 from .window_segmentor import WindowSegmentor
 from .estimators import SeparableAMOCEstimator
@@ -113,7 +114,39 @@ class DyadicIntervalMaker:
         )
 
 
-class SeparablePenaltyTuner:
+class BasePenaltyTuner:
+    @abc.abstractmethod
+    def fit(self) -> "BasePenaltyTuner":
+        return self
+
+    def _check_is_fitted(self):
+        if not hasattr(self, "penalty_scale_"):
+            msg = f"This instance of {type(self).__name__} is not fitted yet."
+            raise RuntimeError(msg)
+
+    @abc.abstractmethod
+    def _summarise(self) -> dict:
+        return {"cpt_count": None, "penalty": None, "penalty_scale": None}
+
+    def summarise(self) -> pd.DataFrame:
+        self._check_is_fitted()
+        results = self._summarise()
+        return pd.DataFrame(results).sort_values("penalty_scale").reset_index(drop=True)
+
+    def show(self, title="", xvar="penalty_scale") -> go:
+        self._check_is_fitted()
+        results = self.summarise()
+        fig = px.scatter(results, x=xvar, y="cpt_count", title=title)
+        if xvar == "penalty_scale":
+            vline_value = self.detector.estimator.penalty.scale
+        elif xvar == "penalty":
+            vline_value = self.detector.estimator.penalty()
+        fig.add_vline(vline_value, line_width=0.5, line_dash="dot")
+        fig.add_hline(self.target_cpts, line_width=0.5, line_dash="dot")
+        return fig
+
+
+class SeparablePenaltyTuner(BasePenaltyTuner):
     """
     Class for tuning WindowSegmentor detectors with SeparableAMOCEstimators.
 
@@ -134,9 +167,9 @@ class SeparablePenaltyTuner:
         interval_generator="dyadic",
         prob: float = 0.1,
         step: int = 5,
-        alpha=1.5,
-        step_proportion=0.25,
-        selector=targetscaler(alpha=1.0),
+        alpha: float = 1.5,
+        step_proportion: float = 0.25,
+        selector: Callable = targetscaler(alpha=1.0),
     ):
         self.detector = detector
         self.target_cpts = target_cpts
@@ -187,17 +220,20 @@ class SeparablePenaltyTuner:
             self.detector.max_window,
         )
         scores, cpts = self._detect_in(starts, ends)
-        self.penalties = np.zeros(self.target_cpts)
+        self.scores = scores
+        self.cpts = cpts
+        penalties = np.zeros(self.target_cpts)
         i = 0
         while (i < self.target_cpts) & np.any(scores > 0.0):
             argmax = scores.argmax()
-            self.penalties[i] = scores[argmax]
+            penalties[i] = scores[argmax]
             max_cpt = cpts[argmax]
             cpt_in_interval = (max_cpt >= ends) & (max_cpt < starts)
             scores[cpt_in_interval] = 0.0
             i += 1
+        return penalties
 
-    def fit(self, x: pd.DataFrame):
+    def fit(self, x: pd.DataFrame) -> "SeparablePenaltyTuner":
         if x.shape[0] < self.target_cpts:
             raise ValueError("x must contain more rows than target_cpts.")
 
@@ -206,40 +242,19 @@ class SeparablePenaltyTuner:
 
         # The smaller index means more recent throughout streamchange, thus reverse.
         self.x = x.to_numpy()[::-1]
-        self._find_penalties()
+        self.penalties = self._find_penalties()
         penalty = self.selector(self.penalties)
-        penalty_scale_ = penalty / self.detector.estimator.penalty.default_penalty()
-        self.penalty_scale_ = penalty_scale_
-        self.detector.estimator.penalty.scale = penalty_scale_
+        self.penalty_scale_ = penalty / self.detector.estimator.penalty.value
+        self.detector.estimator.penalty.scale = self.penalty_scale_
+        return self
 
-    def show(self, title="") -> go:
-        # TODO: Make show similar to OptunaPenaltyTuner
-
-        fig = go.Figure(
-            layout=go.Layout(
-                title=title,
-                xaxis_title="Number of changepoints",
-                yaxis_title="Penalty",
-            )
-        )
-        fig.add_traces(
-            [
-                go.Scatter(
-                    x=np.arange(self.target_cpts),
-                    y=self.penalties,
-                    mode="markers",
-                    name="Penalty series",
-                ),
-                go.Scatter(
-                    x=np.arange(self.target_cpts),
-                    y=np.repeat(self.detector.estimator.penalty(), self.target_cpts),
-                    mode="lines",
-                    line_dash="dot",
-                    name="Tuned penalty",
-                ),
-            ]
-        )
-        return fig
+    def _summarise(self):
+        results = {
+            "cpt_count": np.arange(self.target_cpts) + 1,
+            "penalty": self.penalties,
+            "penalty_scale": self.penalties / self.detector.estimator.penalty.value,
+        }
+        return results
 
 
 # TODO: Generalize the Optuna tuner to any ChangeDetector or AnomalyDetector.
@@ -279,7 +294,7 @@ class _Optuna_Penalty_Objective:
         return self._get_score(cpt_count)
 
 
-class OptunaPenaltyTuner:
+class OptunaPenaltyTuner(BasePenaltyTuner):
     def __init__(
         self,
         detector: WindowSegmentor,
@@ -296,7 +311,7 @@ class OptunaPenaltyTuner:
         self.interpolate = interpolate
         self.n_jobs = n_jobs
 
-    def fit(self, x: pd.DataFrame):
+    def fit(self, x: pd.DataFrame) -> "OptunaPenaltyTuner":
         if x.shape[0] < self.target_cpts:
             raise ValueError("x must contain more rows than max_cpts.")
         if self.penalty_scales is None:
@@ -326,7 +341,7 @@ class OptunaPenaltyTuner:
         self.detector.estimator.penalty.scale = penalty_scale_
         return self
 
-    def summarise(self) -> pd.DataFrame:
+    def _summarise(self) -> pd.DataFrame:
         trials = self.study.trials
         penalty_scales = [trial.params["penalty_scale"] for trial in trials]
         cpt_count = [trial.user_attrs["cpt_count"] for trial in trials]
@@ -338,7 +353,7 @@ class OptunaPenaltyTuner:
             "cpt_count": cpt_count,
             self.score: scores,
         }
-        return pd.DataFrame(results).sort_values("penalty_scale").reset_index(drop=True)
+        return results
 
     def _interpolate_summary(self) -> pd.DataFrame:
         results = self.summarise()
@@ -356,14 +371,3 @@ class OptunaPenaltyTuner:
             interpolated_results[column] = unique_results[column]
         interpolated_results.interpolate(inplace=True)
         return interpolated_results
-
-    def show(self, title="", xvar="penalty_scale") -> go:
-        results = self.summarise()
-        fig = px.scatter(results, x=xvar, y="cpt_count", title=title)
-        if xvar == "penalty_scale":
-            vline_value = self.detector.estimator.penalty.scale
-        elif xvar == "penalty":
-            vline_value = self.detector.estimator.penalty()
-        fig.add_vline(vline_value, line_width=0.5, line_dash="dot")
-        fig.add_hline(self.target_cpts, line_width=0.5, line_dash="dot")
-        return fig
