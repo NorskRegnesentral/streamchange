@@ -19,9 +19,12 @@ class ChangeDetector:
     def changepoints(self):
         """List of detected changepoints per iteration (call to update).
 
-        Changepoints are stored as their negative index within the current window.
-        This makes it easy to extract changepoints also outside this class,
-        where the relevant temporal frame of reference is.
+        Changepoints are defined as the last index of a homogenous segment.
+        A changepoint is stored relative to the time of detection by its
+        index backwards in time.
+        For example, if t is the index of the current observation in the data set
+        feeding observations to the ChangeDetector, the changepoint in the
+        external data set is given by t - changepoint.
         """
         return self._changepoints
 
@@ -38,6 +41,8 @@ class ChangeDetector:
         -------
         self
         """
+        self.reset()
+        return self
 
 
 class NumpyDeque:

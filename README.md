@@ -18,10 +18,14 @@ A package for segmenting streaming time series data into homogenous segments. Th
 ...     if detector.change_detected:
 ...         cpts.append((t, detector.changepoints))
 print(cpts)
-[(100, [-2]), (200, [-2])]
+[(100, [1]), (200, [1])]
 ```
 Throughout this package, a change-point is defined as the end of a segment, 
-and it is stored as the negative index from the index of detection.
+and it is stored relative to the time of detection by its index backwards in time.
+For example, if t is the index of the current observation, the changepoint in the
+external data set is given by t - changepoint.
+In the example above, 100 and 200 are the times of detection, and the changepoints
+are located at indices 99 and 199.
 
 ## Installation
 ```sh
