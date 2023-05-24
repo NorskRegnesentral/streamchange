@@ -2,20 +2,21 @@ from river.stats import Mean, Quantile
 import pandas as pd
 import numpy as np
 
-from streamchange.amoc import WindowSegmentor, UnivariateCUSUM
+from streamchange.amoc import WindowSegmentor, CUSUM
 from streamchange.segment_stats import StatUnion, StatBuffer
 from streamchange.conveniences import fit_segmentation
 from streamchange.data import simulate
+from streamchange.penalties import BIC
 
-seg_len = 100000
+seg_len = 50
 series = simulate([0, 10, 0], [seg_len], p=1)[0]
 
 
 #################
 ## Single stat ##
 #################
-test = UnivariateCUSUM(10)
-detector = WindowSegmentor(test, 2, 100)
+estimator = CUSUM(penalty=BIC(scale=10))
+detector = WindowSegmentor(estimator, 2, 100)
 stat = StatUnion({"mean": StatBuffer(Mean())}, detector.max_window)
 segmentation = fit_segmentation(detector, stat, series)
 print(pd.DataFrame(segmentation))
@@ -24,8 +25,8 @@ print(pd.DataFrame(segmentation))
 ###################
 ## Several stats ##
 ###################
-test = UnivariateCUSUM().set_default_threshold(10 * series.size)
-detector = WindowSegmentor(test, 4, 100)
+estimator = CUSUM(penalty=BIC(scale=10))
+detector = WindowSegmentor(estimator, 4, 100)
 stat = StatUnion(
     {
         "mean": StatBuffer(Mean()),
