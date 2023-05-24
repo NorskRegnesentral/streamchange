@@ -1,6 +1,6 @@
 import numpy as np
 import pandas as pd
-from river.stream import iter_pandas
+import copy
 
 from ..base import ChangeDetector, NumpyDeque
 from ..utils import geomspace_int
@@ -154,7 +154,7 @@ class WindowSegmentor(ChangeDetector):
 
     def predict(self, x: pd.DataFrame = None) -> list:
         if x is None:
-            return self.changepoints_
+            return copy.deepcopy(self.changepoints_)
         else:
             # TODO: Complete
             raise RuntimeError("Prediction for new observation is not implemented yet.")
