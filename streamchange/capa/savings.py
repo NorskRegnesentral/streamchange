@@ -26,11 +26,11 @@ class BaseSaving:
         """Calculate the optimal saving cumulatively from the _right_"""
 
 
-@njit
-def cumopt_constmeanl2(x: np.ndarray, penalty: float) -> np.ndarray:
-    sums = np.cumsum(x[::-1])[::-1]
-    k = np.arange(x.shape[0], 0, -1)
-    return sums**2 / k - penalty
+# @njit
+def cumopt_constmeanl2(x: np.ndarray) -> np.ndarray:
+    sums = np.cumsum(x)
+    k = np.arange(1, x.shape[0] + 1)
+    return sums**2 / k
 
 
 class ConstMeanL2(BaseSaving):
@@ -44,4 +44,4 @@ class ConstMeanL2(BaseSaving):
             return np.sum(x) ** 2 / x.size - self.penalty
 
     def cumopt(self, x):
-        return cumopt_constmeanl2(x, self.penalty)
+        return cumopt_constmeanl2(x) - self.penalty
