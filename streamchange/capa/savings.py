@@ -1,21 +1,17 @@
 import abc
 import numpy as np
 from numbers import Number
-from typing import Union
+from typing import Union, Tuple
 from numba import njit
+
+from ..penalties import BasePenalty, ConstantPenalty, ChiSquarePenalty
 
 
 class BaseSaving:
-    def __init__(self, penalty: float = None, arl: int = 10000, p: int = 1):
-        self.arl = arl
-        self.p = p
-        self.penalty = self.default_penalty(arl, p) if penalty is None else penalty
-
-    @staticmethod
-    def default_penalty(n: int, p: int = 1) -> float:
-        """Default penalty as function of n and p"""
-        phi = np.log(n)
-        return p + 2 * np.sqrt(p * phi) + 2 * phi
+    def __init__(self, penalty: Tuple[BasePenalty, Number]):
+        if isinstance(penalty, Number):
+            penalty = ConstantPenalty(penalty)
+        self.penalty = penalty
 
     @abc.abstractmethod
     def opt(self, x: Union[Number, np.ndarray]) -> Number:
@@ -26,7 +22,7 @@ class BaseSaving:
         """Calculate the optimal saving cumulatively from the _right_"""
 
 
-# @njit
+@njit
 def cumopt_constmeanl2(x: np.ndarray) -> np.ndarray:
     sums = np.cumsum(x)
     k = np.arange(1, x.shape[0] + 1)
@@ -34,14 +30,14 @@ def cumopt_constmeanl2(x: np.ndarray) -> np.ndarray:
 
 
 class ConstMeanL2(BaseSaving):
-    def __init__(self, penalty=None, arl=10000, p=1):
-        super().__init__(penalty, arl, p)
+    def __init__(self, penalty=ChiSquarePenalty()):
+        super().__init__(penalty)
 
     def opt(self, x):
         if isinstance(x, Number):
-            return x**2 - self.penalty
+            return x**2 - self.penalty()
         else:
-            return np.sum(x) ** 2 / x.size - self.penalty
+            return np.sum(x) ** 2 / x.size - self.penalty()
 
     def cumopt(self, x):
-        return cumopt_constmeanl2(x) - self.penalty
+        return cumopt_constmeanl2(x) - self.penalty()

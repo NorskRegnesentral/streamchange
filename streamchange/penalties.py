@@ -1,6 +1,8 @@
 import abc
 import numpy as np
 
+DEFAULT_ARL = 10000
+
 
 class BasePenalty:
     def __init__(self, scale: float = 1.0):
@@ -28,10 +30,18 @@ class ConstantPenalty(BasePenalty):
 
 
 class BIC(ConstantPenalty):
-    def __init__(self, arl: int = 10000, p: int = 1, scale=1.0):
+    def __init__(self, arl: int = DEFAULT_ARL, p: int = 1, scale=1.0):
         self.arl = arl
         self.p = p
-        value = 2 * self.p * np.log(self.arl)
+        value = 2 * p * np.log(arl)
+        super().__init__(value, scale)
+
+
+class ChiSquarePenalty(ConstantPenalty):
+    def __init__(self, arl: int = DEFAULT_ARL, p: int = 1, scale=1.0):
+        self.arl = arl
+        self.p = p
+        value = p + 2 * np.sqrt(p * np.log(arl)) + 2 * np.log(arl)
         super().__init__(value, scale)
 
 
