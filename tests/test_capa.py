@@ -9,13 +9,15 @@ def test_accuracy():
     df = simulate([0, 30], [seg_len], p=1, seed=2)
     point_anom_pos = 10
     df.iloc[point_anom_pos] = 200
-    capa = Capa(ConstMeanL2(), minsl=2, maxsl=1000)
-    collective_anoms, point_anoms = capa.fit(df).predict()
-    assert len(collective_anoms) == 1
-    assert collective_anoms[0]["end"] == df.size - 1
-    assert collective_anoms[0]["start"] == seg_len
-    assert len(point_anoms) == 1
-    assert point_anoms[0]["start"] == point_anom_pos
+    capa = Capa(ConstMeanL2(), minsl=2, maxsl=1000, predict_point_anomalies=True)
+    capa.fit(df)
+    assert len(capa.collective_anomalies_) == 1
+    assert capa.collective_anomalies_[0]["end"] == df.size - 1
+    assert capa.collective_anomalies_[0]["start"] == seg_len
+    assert len(capa.point_anomalies_) == 1
+    assert capa.point_anomalies_[0]["start"] == point_anom_pos
+
+    assert len(capa.predict()) == 2
 
 
 # def test_capa_penalty():
