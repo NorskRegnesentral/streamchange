@@ -10,19 +10,19 @@ class LordenPollakCUSUM(ChangeDetector):
         self.reset()
 
     def reset(self):
-        self._changepoints = []
+        super().reset()
         self.n = 0
         self.sum = 0.0
         self.score = 0.0
 
     def update(self, x: numbers.Number):
-        self._changepoints = []
+        super().reset()
 
         mean = self.sum / self.n if self.n > 0 else 0
         mu = max(mean, self.rho)
         self.score = max(0, self.score + mu * x - mu**2 / 2)
         if self.score > self.threshold:
-            self._changepoints = [-self.n - 1]
+            self._changepoints = [self.n + 1]
 
         if self.score < 1e-8:
             self.reset()
