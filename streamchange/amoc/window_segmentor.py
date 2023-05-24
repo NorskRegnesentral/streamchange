@@ -54,12 +54,9 @@ class WindowSegmentor(ChangeDetector):
         self.window = NumpyDeque(max_window)
         self.reset()
 
-    def _reset_changepoints(self):
-        super().reset()
-
     def reset(self) -> "WindowSegmentor":
+        super().reset()
         self.last_changepoint = 0
-        self._reset_changepoints()
         self.estimator.reset()
         self.window.reset()
         return self
@@ -116,9 +113,9 @@ class WindowSegmentor(ChangeDetector):
     def update(self, x):
         if self.change_detected:
             self.window.pop(len(self.window) - self.changepoints[-1])
+        super().reset()
         self.window.appendleft(x)
         self.last_changepoint = min(self.last_changepoint + 1, int(1e8))
-        self._reset_changepoints()
 
         start = len(self.window)
         end = min(0, start - self.min_window)
