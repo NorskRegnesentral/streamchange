@@ -2,6 +2,7 @@ import numpy as np
 import pandas as pd
 from numbers import Number
 from typing import Tuple
+import copy
 
 from streamchange.base import NumpyDeque
 from .savings import BaseSaving, ConstMeanL2
@@ -15,6 +16,7 @@ class Capa:
         psaving: BaseSaving = None,
         minsl=2,
         maxsl=1000,
+        predict_point_anomalies=False,
     ):
         assert minsl >= 2
         assert maxsl > minsl
@@ -22,22 +24,23 @@ class Capa:
         self.maxsl = maxsl
         self.csaving = csaving
         self.psaving = psaving if not psaving is None else csaving
+        self.predict_point_anomalies = predict_point_anomalies
         self.reset()
 
     def reset(self) -> "Capa":
         self.window = NumpyDeque(self.maxsl)
         self.opt_saving = NumpyDeque(self.maxsl)
         self.opt_saving.appendleft(0)
-        self.anom_start = 0
+        self.anomaly_start = 0
         return self
 
     @property
     def point_anomaly_detected(self) -> bool:
-        return self.anom_start == 0
+        return self.anomaly_start == 0
 
     @property
     def collective_anomaly_detected(self) -> bool:
-        return self.anom_start > 0
+        return self.anomaly_start > 0
 
     @property
     def anomaly_detected(self) -> bool:
@@ -62,23 +65,23 @@ class Capa:
         argmax = np.argmax(savings)
         self.opt_saving.appendleft(savings[argmax])
         if argmax == 2:
-            self.anom_start = cpt - 1
+            self.anomaly_start = cpt - 1
         elif argmax == 1:
-            self.anom_start = 0
+            self.anomaly_start = 0
         else:
-            self.anom_start = -1
+            self.anomaly_start = -1
         return self
 
     def fit(self, x: pd.Series) -> "Capa":
         self.reset()
         x = x.dropna()
-        anom_starts = []
+        anomaly_starts = []
         for value in x.values:
             self.update(value)
-            anom_starts.append(self.anom_start)
-        anom_starts = pd.Series(anom_starts, index=x.index, dtype=int)
-        self.collective_anomalies_ = self.extract_collective_anomalies(anom_starts)
-        self.point_anomalies_ = self.extract_point_anomalies(anom_starts)
+            anomaly_starts.append(self.anomaly_start)
+        anomaly_starts = pd.Series(anomaly_starts, index=x.index, dtype=int)
+        self.collective_anomalies_ = self.extract_collective_anomalies(anomaly_starts)
+        self.point_anomalies_ = self.extract_point_anomalies(anomaly_starts)
         return self
 
     def _check_is_fitted(self):
@@ -89,7 +92,10 @@ class Capa:
     def predict(self, x: pd.Series = None) -> Tuple[list, list]:
         self._check_is_fitted()
         if x is None:
-            return self.collective_anomalies_, self.point_anomalies_
+            anomalies = copy.deepcopy(self.collective_anomalies_)
+            if self.predict_point_anomalies:
+                anomalies += self.point_anomalies_
+            return anomalies
         else:
             # TODO: Complete
             raise RuntimeError("Prediction for new observation is not implemented yet.")
@@ -98,10 +104,10 @@ class Capa:
         return self.fit(x).predict()
 
     @staticmethod
-    def extract_collective_anomalies(anom_starts: pd.Series) -> list:
+    def extract_collective_anomalies(anomaly_starts: pd.Series) -> list:
         i = -1
-        times = anom_starts.index
-        starts = anom_starts.values
+        times = anomaly_starts.index
+        starts = anomaly_starts.values
         anoms = []
         while i >= -starts.size:
             start_i = starts[i]
@@ -118,10 +124,10 @@ class Capa:
         return anoms
 
     @staticmethod
-    def extract_point_anomalies(anom_starts: pd.Series) -> list:
+    def extract_point_anomalies(anomaly_starts: pd.Series) -> list:
         i = -1
-        times = anom_starts.index
-        starts = anom_starts.values
+        times = anomaly_starts.index
+        starts = anomaly_starts.values
         anoms = []
         while i >= -starts.size:
             start_i = starts[i]
