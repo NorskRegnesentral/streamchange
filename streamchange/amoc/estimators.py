@@ -37,8 +37,7 @@ def optim_univariate_cusum(x: np.ndarray, t: np.ndarray):
 @njit
 def optim_univariate_cusum0(x: np.ndarray, t: np.ndarray):
     sums = np.cumsum(x)
-    cusum = sums[t - 1] / np.sqrt(t)
-    return _optim(cusum**2, t)
+    return _optim(sums[t - 1] ** 2 / t, t)
 
 
 @njit
