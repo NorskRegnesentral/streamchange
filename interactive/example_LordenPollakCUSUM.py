@@ -18,3 +18,10 @@ for t, x in series.items():
 fig = px.scatter(x=range(len(score)), y=score, render_mode="webgl")
 fig.add_hline(detector.penalty(), line_color="red")
 fig.show()
+
+# Using .fit_predict()
+cpts = detector.fit_predict(series)
+fig = px.scatter(series)
+for cpt in cpts:
+    fig.add_vline(cpt, line_color="red")
+fig.show()

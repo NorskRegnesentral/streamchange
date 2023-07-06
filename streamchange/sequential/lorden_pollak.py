@@ -1,6 +1,8 @@
 from streamchange.base import ChangeDetector
 from numbers import Number
 from typing import Tuple
+import copy
+import pandas as pd
 
 from ..penalties import BasePenalty, ConstantPenalty
 
@@ -34,3 +36,27 @@ class LordenPollakCUSUM(ChangeDetector):
             self.n += 1
             self.sum += x
         return self
+
+    def fit(self, x: pd.Series) -> "LordenPollakCUSUM":
+        self.reset()
+        x = x.dropna()
+        times = x.index
+        x = x.reset_index(drop=True)
+        cpts = []
+        for t, x_t in x.items():
+            self.update(x_t)
+            if self.change_detected:
+                cpts += [t - cpt for cpt in self.changepoints]
+                self.reset()
+        self.changepoints_ = times[cpts].tolist()
+        return self
+
+    def predict(self, x: pd.DataFrame = None) -> list:
+        if x is None:
+            return copy.deepcopy(self.changepoints_)
+        else:
+            # TODO: Complete
+            raise RuntimeError("Prediction for new observation is not implemented yet.")
+
+    def fit_predict(self, x: pd.DataFrame) -> list:
+        return self.fit(x).predict()
