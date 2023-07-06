@@ -89,7 +89,7 @@ class Capa:
             msg = f"This instance of {type(self).__name__} is not fitted yet."
             raise RuntimeError(msg)
 
-    def predict(self, x: pd.Series = None) -> Tuple[list, list]:
+    def predict(self, x: pd.Series = None) -> list:
         self._check_is_fitted()
         if x is None:
             anomalies = copy.deepcopy(self.collective_anomalies_)
