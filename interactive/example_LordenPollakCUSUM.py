@@ -4,7 +4,7 @@ from streamchange.sequential import LordenPollakCUSUM
 from streamchange.data import simulate
 
 x = simulate([0, 5, 0, 20], seg_lens=[100, 30, 100, 30])[0]
-detector = LordenPollakCUSUM(rho=4, penalty=100, reset_delay=10)
+detector = LordenPollakCUSUM(rho=4, penalty=100, restart_delay=10)
 score = []
 res = []
 for t, x_t in x.items():
@@ -20,7 +20,7 @@ fig.show()
 
 # Using .fit_predict()
 x = simulate([0, 5, 0, 20], seg_lens=[100, 30, 100, 30])[0]
-detector = LordenPollakCUSUM(rho=4, penalty=100, reset_delay=30)
+detector = LordenPollakCUSUM(rho=4, penalty=100, restart_delay=30)
 cpts = detector.fit_predict(x)
 fig = px.scatter(x)
 for cpt in cpts:

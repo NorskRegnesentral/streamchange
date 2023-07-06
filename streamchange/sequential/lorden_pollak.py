@@ -12,14 +12,16 @@ class LordenPollakCUSUM(ChangeDetector):
         self,
         rho: Number,
         penalty: Tuple[BasePenalty, Number],
-        reset_delay: int = 0,
+        reset_on_change: bool = True,
+        restart_delay: int = 0,
     ):
         if isinstance(penalty, Number):
             penalty = ConstantPenalty(penalty)
         self.penalty = penalty
         self.rho = rho
-        self.reset_delay = reset_delay
-        self.reset_samples = 0
+        self.reset_on_change = reset_on_change
+        self.restart_delay = restart_delay if reset_on_change else 0
+        self.restart_counter = 0
         self.reset()
 
     def reset(self):
@@ -29,12 +31,12 @@ class LordenPollakCUSUM(ChangeDetector):
         self.score = 0.0
 
     def update(self, x: Number):
-        if self.change_detected:
+        if self.reset_on_change and self.change_detected:
             self.reset()
 
         super().reset()
-        if self.reset_samples < self.reset_delay:
-            self.reset_samples += 1
+        if self.restart_counter < self.restart_delay:
+            self.restart_counter += 1
             return self
 
         mean = self.sum / self.n if self.n > 0 else 0
@@ -42,7 +44,7 @@ class LordenPollakCUSUM(ChangeDetector):
         self.score = max(0, self.score + mu * x - mu**2 / 2)
         if self.score > self.penalty():
             self._changepoints = [self.n + 1]
-            self.reset_samples = 0
+            self.restart_counter = 0
 
         if self.score < 1e-8:
             self.reset()
