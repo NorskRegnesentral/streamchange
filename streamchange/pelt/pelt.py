@@ -51,6 +51,7 @@ class Pelt:
             cost = self.cost.opt(self.window.values)
             self.opt_cost.appendleft(self.opt_cost.values[0] + cost)
 
+        # TODO: Add pruning.
         return self
 
     @staticmethod
