@@ -3,14 +3,19 @@ import copy
 import multiprocessing
 import optuna
 import pandas as pd
+from numbers import Number
 import numpy as np
 import plotly.graph_objects as go
 import plotly.express as px
+from typing import Union
 
 from .base import ChangeDetector
 
 
 class BasePenaltyTuner:
+    def __init__(self, detector: ChangeDetector):
+        self.detector = detector
+
     @abc.abstractmethod
     def fit(self) -> "BasePenaltyTuner":
         return self
@@ -19,6 +24,14 @@ class BasePenaltyTuner:
         if not hasattr(self, "penalty_scale_"):
             msg = f"This instance of {type(self).__name__} is not fitted yet."
             raise RuntimeError(msg)
+
+    def update(self, x: Union[Number, dict]) -> "ChangeDetector":
+        self.detector.update(x)
+        return self
+
+    def predict(self, x: pd.DataFrame) -> np.ndarray:
+        self._check_is_fitted()
+        return self.detector.fit_predict(x)
 
     @abc.abstractmethod
     def _summarise(self) -> dict:
@@ -88,7 +101,7 @@ class GridPenaltyTuner(BasePenaltyTuner):
         interpolate=True,
         n_jobs: int = 1,
     ):
-        self.detector = detector
+        super().__init__(detector)
         self.target_cpts = target_cpts
         self.penalty_scales = penalty_scales
         self.score = score

@@ -54,6 +54,24 @@ class ChangeDetector:
         self.reset()
         return self
 
+    def fit_predict(self, x: pd.DataFrame) -> list:
+        """Fit the change detector to a data stream and return the changepoints.
+
+        Convenient method for using the change detector in an offline setting.
+        Note that .fit() and .predict() methods must be implemented by child classes.
+
+        Parameters
+        ----------
+        x
+            A data stream.
+
+        Returns
+        -------
+        np.ndarray
+            The changepoints detected in the data stream.
+        """
+        return self.fit(x).predict()
+
 
 class NumpyDeque:
     def __init__(self, max_length: int = 1e6):
