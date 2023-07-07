@@ -61,6 +61,9 @@ class WindowSegmentor(ChangeDetector):
         self.window.reset()
         return self
 
+    def get_penalty(self):
+        return self.estimator.penalty
+
     def _validate_window(self, min_window, max_window, minsl):
         if min_window < 2:
             raise ValueError("min_window cannot be smaller than 2.")

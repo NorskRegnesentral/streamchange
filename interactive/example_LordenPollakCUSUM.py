@@ -26,3 +26,22 @@ fig = px.scatter(x)
 for cpt in cpts:
     fig.add_vline(cpt, line_color="red")
 fig.show()
+
+
+# Penalty tuning
+from streamchange.tuners import OptunaPenaltyTuner
+import numpy as np
+
+x = simulate([0, 10, 0], [1000, 100, 1000], p=1)[0]
+detector = LordenPollakCUSUM(rho=0.0001, penalty=1, restart_delay=100)
+
+penalty_scales = np.geomspace(1e-6, 1000, 100)
+tuner = OptunaPenaltyTuner(detector, 100, penalty_scales)
+tuner.fit(x)
+tuner.show()
+
+cpts = detector.fit_predict(x)
+fig = px.scatter(x)
+for cpt in cpts:
+    fig.add_vline(cpt, line_color="red")
+fig.show()

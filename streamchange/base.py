@@ -3,6 +3,8 @@ from numbers import Number
 from typing import Union
 import numpy as np
 
+from .penalties import BasePenalty
+
 
 class ChangeDetector:
     def __init__(self):
@@ -43,6 +45,14 @@ class ChangeDetector:
         """
         self.reset()
         return self
+
+    @abc.abstractmethod
+    def get_penalty(self) -> BasePenalty:
+        """Get the penalty function of the change detector.
+
+        Useful for tuning the penalty function across all change detectors, as
+        the penalty function can be nested inside other objects in the ChangeDetector.
+        """
 
 
 class NumpyDeque:

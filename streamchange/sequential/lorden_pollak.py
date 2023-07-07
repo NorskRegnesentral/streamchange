@@ -3,6 +3,7 @@ from numbers import Number
 from typing import Tuple
 import copy
 import pandas as pd
+import numpy as np
 
 from ..penalties import BasePenalty, ConstantPenalty
 
@@ -29,6 +30,9 @@ class LordenPollakCUSUM(ChangeDetector):
         self.n = 0
         self.sum = 0.0
         self.score = 0.0
+
+    def get_penalty(self):
+        return self.penalty
 
     def update(self, x: Number):
         if self.reset_on_change and self.change_detected:
@@ -58,10 +62,13 @@ class LordenPollakCUSUM(ChangeDetector):
         x = x.dropna()
         times = x.index
         x = x.reset_index(drop=True)
+
+        self.scores_ = pd.Series(np.zeros(len(x)), index=times)
         alarm_indices = []
         cpts = []
         for t, x_t in x.items():
             self.update(x_t)
+            self.scores_[t] = self.score
             if self.change_detected:
                 alarm_indices.append(t)
                 cpts.append(t - self.changepoints[0])  # Can only contain one cpt.

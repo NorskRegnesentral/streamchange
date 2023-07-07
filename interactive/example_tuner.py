@@ -17,7 +17,7 @@ for t, (x, _) in enumerate(iter_pandas(df)):
 print(cpts)
 
 
-from streamchange.amoc import OptunaPenaltyTuner
+from streamchange.tuners import OptunaPenaltyTuner
 import numpy as np
 
 df = simulate([0, 10, 0], [1000], p=1)

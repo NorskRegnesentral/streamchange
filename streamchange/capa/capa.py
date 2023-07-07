@@ -34,6 +34,9 @@ class Capa:
         self.anomaly_start = 0
         return self
 
+    def get_penalty(self):
+        return self.csaving.penalty
+
     @property
     def point_anomaly_detected(self) -> bool:
         return self.anomaly_start == 0
