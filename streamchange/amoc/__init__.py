@@ -10,7 +10,6 @@ from .estimators import (
 )
 from .penalty_tuners import (
     AMOCPenaltyTuner,
-    OptunaPenaltyTuner,
     RandomIntervalMaker,
     StepwiseIntervalMaker,
     DyadicIntervalMaker,
@@ -27,7 +26,6 @@ __all__ = [
     "MaxCUSUM",
     "cusum_transform",
     "AMOCPenaltyTuner",
-    "OptunaPenaltyTuner",
     "RandomIntervalMaker",
     "StepwiseIntervalMaker",
     "DyadicIntervalMaker",
