@@ -82,6 +82,3 @@ class LordenPollakCUSUM(ChangeDetector):
         else:
             # TODO: Complete
             raise RuntimeError("Prediction for new observation is not implemented yet.")
-
-    def fit_predict(self, x: pd.DataFrame) -> list:
-        return self.fit(x).predict()
