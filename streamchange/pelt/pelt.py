@@ -80,7 +80,7 @@ class Pelt:
             last_cpts.append(self.last_cpt)
         last_cpts = pd.Series(last_cpts, index=x.index, dtype=int)
         self.segments_ = self.extract_segments(last_cpts)
-        self.changepoints_ = [s["end"] for s in self.segments_]
+        self.changepoints_ = [s["end"] for s in self.segments_[1:]]
         return self
 
     def _check_is_fitted(self):
