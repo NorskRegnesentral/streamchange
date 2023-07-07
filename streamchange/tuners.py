@@ -34,7 +34,6 @@ class BasePenaltyTuner:
         results = self.summarise()
         fig = px.scatter(results, x=xvar, y="cpt_count", title=title)
         if xvar == "penalty_scale":
-            # vline_value = self.detector.estimator.penalty.scale
             vline_value = self.detector.get_penalty().scale
         elif xvar == "penalty":
             vline_value = self.detector.get_penalty()()
@@ -72,7 +71,6 @@ class _Optuna_Penalty_Objective:
             self.max_penalty_scale,
             log=True,
         )
-        # detector.estimator.penalty.scale = penalty_scale
         detector.get_penalty().scale = penalty_scale
         changepoints = detector.fit_predict(self.x)
         cpt_count = len(changepoints)
@@ -102,7 +100,6 @@ class OptunaPenaltyTuner(BasePenaltyTuner):
         penalty_scales = [trial.params["penalty_scale"] for trial in trials]
         cpt_count = [trial.user_attrs["cpt_count"] for trial in trials]
         scores = [trial.values[0] for trial in trials]
-        # default_penalty = self.detector.estimator.penalty.default_penalty()
         default_penalty = self.detector.get_penalty().default_penalty()
         results = {
             "penalty": [scale * default_penalty for scale in penalty_scales],
@@ -159,5 +156,4 @@ class OptunaPenaltyTuner(BasePenaltyTuner):
             penalty_scale_ = results.loc[best_index, "penalty_scale"]
         self.penalty_scale_ = penalty_scale_
         self.detector.get_penalty().scale = penalty_scale_
-        # self.detector.estimator.penalty.scale = penalty_scale_
         return self
