@@ -18,20 +18,21 @@ class BasePenaltyTuner:
 
     @abc.abstractmethod
     def fit(self) -> "BasePenaltyTuner":
+        self.detector_ = copy.deepcopy(self.detector)
         return self
 
     def _check_is_fitted(self):
-        if not hasattr(self, "penalty_scale_"):
+        if not hasattr(self, "detector_"):
             msg = f"This instance of {type(self).__name__} is not fitted yet."
             raise RuntimeError(msg)
 
     def update(self, x: Union[Number, dict]) -> "ChangeDetector":
-        self.detector.update(x)
+        self.detector_.update(x)
         return self
 
     def predict(self, x: pd.DataFrame) -> np.ndarray:
         self._check_is_fitted()
-        return self.detector.fit_predict(x)
+        return self.detector_.fit_predict(x)
 
     @abc.abstractmethod
     def _summarise(self) -> dict:
@@ -168,5 +169,6 @@ class GridPenaltyTuner(BasePenaltyTuner):
             best_index = results.abs_error.idxmin()
             penalty_scale_ = results.loc[best_index, "penalty_scale"]
         self.penalty_scale_ = penalty_scale_
-        self.detector.get_penalty().scale = penalty_scale_
+        self.detector_ = copy.deepcopy(self.detector)
+        self.detector_.get_penalty().scale = penalty_scale_
         return self
