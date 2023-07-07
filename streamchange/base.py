@@ -1,7 +1,9 @@
 import abc
+import copy
 from numbers import Number
 from typing import Union
 import numpy as np
+import pandas as pd
 
 from .penalties import BasePenalty
 
@@ -23,12 +25,18 @@ class ChangeDetector:
 
         Changepoints are defined as the last index of a homogenous segment.
         A changepoint is stored relative to the time of detection by its
-        index backwards in time.
-        For example, if t is the index of the current observation in the data set
-        feeding observations to the ChangeDetector, the changepoint in the
-        external data set is given by t - changepoint.
+        index backwards in time. For example, if t is the index of the current
+        observation, the changepoint in the external data set is given by t - changepoint.
         """
         return self._changepoints
+
+    @abc.abstractmethod
+    def get_penalty(self) -> BasePenalty:
+        """Get the penalty function of the change detector.
+
+        Useful for tuning the penalty function across all change detectors, as
+        the penalty function can be nested inside other objects in the ChangeDetector.
+        """
 
     @abc.abstractmethod
     def update(self, x: Union[Number, dict]) -> "ChangeDetector":
@@ -45,14 +53,6 @@ class ChangeDetector:
         """
         self.reset()
         return self
-
-    @abc.abstractmethod
-    def get_penalty(self) -> BasePenalty:
-        """Get the penalty function of the change detector.
-
-        Useful for tuning the penalty function across all change detectors, as
-        the penalty function can be nested inside other objects in the ChangeDetector.
-        """
 
 
 class NumpyDeque:
