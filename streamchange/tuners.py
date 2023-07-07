@@ -78,7 +78,7 @@ class _Optuna_Penalty_Objective:
         return self._get_score(cpt_count)
 
 
-class OptunaPenaltyTuner(BasePenaltyTuner):
+class GridPenaltyTuner(BasePenaltyTuner):
     def __init__(
         self,
         detector: ChangeDetector,
@@ -127,7 +127,7 @@ class OptunaPenaltyTuner(BasePenaltyTuner):
         interpolated_results.interpolate(inplace=True)
         return interpolated_results
 
-    def fit(self, x: pd.DataFrame) -> "OptunaPenaltyTuner":
+    def fit(self, x: pd.DataFrame) -> "GridPenaltyTuner":
         if x.shape[0] < self.target_cpts:
             raise ValueError("x must contain more rows than max_cpts.")
         if self.penalty_scales is None:

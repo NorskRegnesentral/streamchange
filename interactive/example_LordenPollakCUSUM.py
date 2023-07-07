@@ -29,14 +29,14 @@ fig.show()
 
 
 # Penalty tuning
-from streamchange.tuners import OptunaPenaltyTuner
+from streamchange.tuners import GridPenaltyTuner
 import numpy as np
 
 x = simulate([0, 10, 0], [1000, 100, 1000], p=1)[0]
 detector = LordenPollakCUSUM(rho=0.0001, penalty=1, restart_delay=100)
 
 penalty_scales = np.geomspace(1e-6, 1000, 100)
-tuner = OptunaPenaltyTuner(detector, 100, penalty_scales)
+tuner = GridPenaltyTuner(detector, 100, penalty_scales)
 tuner.fit(x)
 tuner.show()
 

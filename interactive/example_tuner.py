@@ -17,12 +17,12 @@ for t, (x, _) in enumerate(iter_pandas(df)):
 print(cpts)
 
 
-from streamchange.tuners import OptunaPenaltyTuner
+from streamchange.tuners import GridPenaltyTuner
 import numpy as np
 
 df = simulate([0, 10, 0], [1000], p=1)
 detector = WindowSegmentor(CUSUM(), 4, 100)
 penalty_scales = np.geomspace(1e-2, 10, 20)
-tuner = OptunaPenaltyTuner(detector, 100, penalty_scales)
+tuner = GridPenaltyTuner(detector, 100, penalty_scales)
 tuner.fit(df)
 tuner.show()
