@@ -101,7 +101,9 @@ class Capa:
             return anomalies
         else:
             # TODO: Complete
-            raise RuntimeError("Prediction for new observation is not implemented yet.")
+            raise RuntimeError(
+                "Prediction for new observations is not implemented yet."
+            )
 
     def fit_predict(self, x: pd.DataFrame) -> list:
         return self.fit(x).predict()

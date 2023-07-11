@@ -81,4 +81,6 @@ class LordenPollakCUSUM(ChangeDetector):
             return copy.deepcopy(self.changepoints_)
         else:
             # TODO: Complete
-            raise RuntimeError("Prediction for new observation is not implemented yet.")
+            raise RuntimeError(
+                "Prediction for new observations is not implemented yet."
+            )
