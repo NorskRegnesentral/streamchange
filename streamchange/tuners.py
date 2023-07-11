@@ -101,6 +101,7 @@ class GridPenaltyTuner(BasePenaltyTuner):
         score="abs_error",
         interpolate=True,
         n_jobs: int = 1,
+        refit=True,
     ):
         super().__init__(detector)
         self.target_cpts = target_cpts
@@ -108,6 +109,7 @@ class GridPenaltyTuner(BasePenaltyTuner):
         self.score = score
         self.interpolate = interpolate
         self.n_jobs = n_jobs
+        self.refit = refit
 
     def _summarise(self) -> pd.DataFrame:
         trials = self.study.trials
@@ -169,7 +171,10 @@ class GridPenaltyTuner(BasePenaltyTuner):
             best_index = results.abs_error.idxmin()
             penalty_scale_ = results.loc[best_index, "penalty_scale"]
         self.penalty_scale_ = penalty_scale_
+
         self.detector_ = copy.deepcopy(self.detector)
         self.detector_.get_penalty().scale = penalty_scale_
-        self.detector_.fit(x)
+        if self.refit:
+            self.detector_.fit(x)
+
         return self
