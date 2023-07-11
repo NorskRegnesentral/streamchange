@@ -30,9 +30,9 @@ class BasePenaltyTuner:
         self.detector_.update(x)
         return self
 
-    def predict(self, x: pd.DataFrame) -> np.ndarray:
+    def predict(self, x: pd.DataFrame = None) -> np.ndarray:
         self._check_is_fitted()
-        return self.detector_.fit_predict(x)
+        return self.detector_.predict(x)
 
     @abc.abstractmethod
     def _summarise(self) -> dict:
@@ -171,4 +171,5 @@ class GridPenaltyTuner(BasePenaltyTuner):
         self.penalty_scale_ = penalty_scale_
         self.detector_ = copy.deepcopy(self.detector)
         self.detector_.get_penalty().scale = penalty_scale_
+        self.detector_.fit(x)
         return self
