@@ -7,6 +7,7 @@ from .scores import (
     AggregatedScore,
     LordenPollakScore,
 )
+from .penalty_tuners import SequentialScorePenaltyTuner
 
 __all__ = [
     "SequentialChangeDetector",
@@ -16,4 +17,5 @@ __all__ = [
     "PenalisedScore",
     "AggregatedScore",
     "LordenPollakScore",
+    "SequentialScorePenaltyTuner",
 ]
