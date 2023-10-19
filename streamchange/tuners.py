@@ -40,13 +40,13 @@ class BasePenaltyTuner:
 
     def summarise(self) -> pd.DataFrame:
         self._check_is_fitted()
-        results = self._summarise()
-        return pd.DataFrame(results).sort_values("penalty_scale").reset_index(drop=True)
+        summary = self._summarise()
+        return pd.DataFrame(summary).sort_values("penalty_scale").reset_index(drop=True)
 
     def show(self, title="", xvar="penalty_scale") -> go:
         self._check_is_fitted()
-        results = self.summarise()
-        fig = px.scatter(results, x=xvar, y="cpt_count", title=title)
+        summary = self.summarise()
+        fig = px.scatter(summary, x=xvar, y="cpt_count", title=title)
         if xvar == "penalty_scale":
             vline_value = self.detector.get_penalty().scale
         elif xvar == "penalty":
@@ -117,31 +117,31 @@ class GridPenaltyTuner(BasePenaltyTuner):
         cpt_count = [trial.user_attrs["cpt_count"] for trial in trials]
         scores = [trial.values[0] for trial in trials]
         default_penalty = self.detector.get_penalty().default_penalty()
-        results = {
+        summary = {
             "penalty": [scale * default_penalty for scale in penalty_scales],
             "penalty_scale": penalty_scales,
             "cpt_count": cpt_count,
             self.score: scores,
         }
-        return results
+        return summary
 
     def _interpolate_summary(self) -> pd.DataFrame:
-        results = pd.DataFrame(self._summarise())
-        results = results.sort_values("penalty_scale").reset_index(drop=True)
-        unique_results = (
-            results.groupby("cpt_count")
+        summary = pd.DataFrame(self._summarise())
+        summary = summary.sort_values("penalty_scale").reset_index(drop=True)
+        unique_summary = (
+            summary.groupby("cpt_count")
             .apply(lambda x: x.iloc[x.penalty_scale.argmin()])
             .drop("cpt_count", axis=1)
         )
-        min_cpts = results.cpt_count.min()
-        max_cpts = results.cpt_count.max()
-        columns = unique_results.columns
+        min_cpts = summary.cpt_count.min()
+        max_cpts = summary.cpt_count.max()
+        columns = unique_summary.columns
         index = np.arange(min_cpts, max_cpts + 1)
-        interpolated_results = pd.DataFrame(columns=columns, index=index)
-        for column in unique_results.columns:
-            interpolated_results[column] = unique_results[column]
-        interpolated_results.interpolate(inplace=True)
-        return interpolated_results
+        interpolated_summary = pd.DataFrame(columns=columns, index=index)
+        for column in unique_summary.columns:
+            interpolated_summary[column] = unique_summary[column]
+        interpolated_summary.interpolate(inplace=True)
+        return interpolated_summary
 
     def fit(self, x: pd.DataFrame) -> "GridPenaltyTuner":
         if x.shape[0] < self.target_cpts:
@@ -167,9 +167,9 @@ class GridPenaltyTuner(BasePenaltyTuner):
         if not self.interpolate:
             penalty_scale_ = self.study.best_params["penalty_scale"]
         else:
-            results = self._interpolate_summary()
-            best_index = results.abs_error.idxmin()
-            penalty_scale_ = results.loc[best_index, "penalty_scale"]
+            self.interpolated_summary = self._interpolate_summary()
+            best_index = self.interpolated_summary.abs_error.idxmin()
+            penalty_scale_ = self.interpolated_summary.loc[best_index, "penalty_scale"]
         self.penalty_scale_ = penalty_scale_
 
         self.detector_ = copy.deepcopy(self.detector)
