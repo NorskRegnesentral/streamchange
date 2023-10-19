@@ -165,6 +165,7 @@ class GridPenaltyTuner(BasePenaltyTuner):
         self.study.optimize(self.objective, n_jobs=n_jobs)
 
         if not self.interpolate:
+            self.summary = self._summarise()
             penalty_scale_ = self.study.best_params["penalty_scale"]
         else:
             self.interpolated_summary = self._interpolate_summary()
