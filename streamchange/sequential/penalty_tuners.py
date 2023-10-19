@@ -78,7 +78,8 @@ class SequentialScorePenaltyTuner(BasePenaltyTuner):
 
         # Run the detector on the data to get the raw scores.
         detector.fit(x)
-        scores = copy.deepcopy(detector.penalised_scores_)
+        self.scores_ = detector.penalised_scores_  # Stored For introspection
+        scores = copy.deepcopy(self.scores_)  # Modified in loop below.
 
         self.penalties = []
         detection_counts = list(range(self.target_detections + 1))
@@ -89,9 +90,10 @@ class SequentialScorePenaltyTuner(BasePenaltyTuner):
             scores.loc[lower:upper] = 0.0
 
         self.summary = pd.DataFrame(self._summarise())
-        penalty_scale_ = self.summary["penalty_scale"].iloc[-1]
+        self.penalty_scale_ = self.summary["penalty_scale"].iloc[-1]
+        self.penalty_ = self.summary["penalty"].iloc[-1]
         self.detector_ = copy.deepcopy(self.detector)
-        self.detector_.get_penalty().scale = penalty_scale_
+        self.detector_.get_penalty().scale = self.penalty_scale_
         if self.refit:
             self.detector_.fit(x)
 
