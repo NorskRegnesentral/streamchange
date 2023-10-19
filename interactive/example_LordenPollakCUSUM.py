@@ -33,7 +33,10 @@ detector.fit(x)
 fig = px.scatter(x.melt(ignore_index=False), color="variable", y="value")
 for alarm in detector.alarms_:
     fig.add_vline(alarm, line_color="red")
+for cpt in detector.changepoints_:
+    fig.add_vline(cpt, line_color="blue")
 fig.show()
+px.scatter(detector.penalised_scores_)
 
 # Penalty tuning
 from streamchange.tuners import GridPenaltyTuner
@@ -52,4 +55,19 @@ alarms = detector.predict()
 fig = px.scatter(x)
 for alarm in alarms:
     fig.add_vline(alarm, line_color="red")
+fig.show()
+
+# Penalty tuning tailored to sequential scores
+from streamchange.sequential import SequentialScorePenaltyTuner
+
+x = simulate([0, 10, 0], [1000, 100, 1000], p=1)[0]
+score = AggregatedScore(LordenPollakScore(rho=0.01), aggregator=np.sum).penalise(1)
+detector = SequentialChangeDetector(score, reset_on_change=True, restart_delay=100)
+
+detector = SequentialScorePenaltyTuner(detector, 5, score_value_margin=0)
+detector.fit(x)
+detector.show()
+
+fig = px.line(detector.detector_.penalised_scores_ + detector.detector_.get_penalty()())
+fig.add_hline(detector.detector_.get_penalty()())
 fig.show()
