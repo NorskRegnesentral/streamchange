@@ -28,5 +28,5 @@ detector = GridPenaltyTuner(detector, 100, penalty_scales)
 detector.fit(df)
 detector.show()
 
-cpts = detector.predict(df)
+cpts = detector.predict()
 print(cpts)
