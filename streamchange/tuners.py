@@ -17,7 +17,7 @@ class BasePenaltyTuner:
         self.detector = detector
 
     @abc.abstractmethod
-    def fit(self) -> "BasePenaltyTuner":
+    def fit(self, x: pd.DataFrame) -> "BasePenaltyTuner":
         self.detector_ = copy.deepcopy(self.detector)
         return self
 
