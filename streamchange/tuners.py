@@ -36,7 +36,7 @@ class BasePenaltyTuner:
 
     @abc.abstractmethod
     def _summarise(self) -> dict:
-        return {"cpt_count": None, "penalty": None, "penalty_scale": None}
+        return {"detection_count": None, "penalty": None, "penalty_scale": None}
 
     def summarise(self) -> pd.DataFrame:
         self._check_is_fitted()
@@ -46,36 +46,40 @@ class BasePenaltyTuner:
     def show(self, title="", xvar="penalty_scale") -> go:
         self._check_is_fitted()
         summary = self.summarise()
-        fig = px.scatter(summary, x=xvar, y="cpt_count", title=title)
+        fig = px.scatter(summary, x=xvar, y="detection_count", title=title)
         if xvar == "penalty_scale":
             vline_value = self.detector.get_penalty().scale
         elif xvar == "penalty":
             vline_value = self.detector.get_penalty()()
         fig.add_vline(vline_value, line_width=0.5, line_dash="dot")
-        fig.add_hline(self.target_cpts, line_width=0.5, line_dash="dot")
+        fig.add_hline(self.target_detections, line_width=0.5, line_dash="dot")
         return fig
 
 
 class _Optuna_Penalty_Objective:
     def __init__(
         self,
-        target_cpts: int,
+        target_detections: int,
         detector: ChangeDetector,
         x: pd.DataFrame,
         score="abs_error",
         min_penalty_scale=1e-8,
         max_penalty_scale=1e8,
     ):
-        self.target_cpts = target_cpts
+        self.target_detections = target_detections
         self.detector = detector
         self.x = x
         self.min_penalty_scale = min_penalty_scale
         self.max_penalty_scale = max_penalty_scale
 
         if score == "abs_error":
-            self._get_score = lambda cpt_count: abs(cpt_count - self.target_cpts)
+            self._get_score = lambda detection_count: abs(
+                detection_count - self.target_detections
+            )
         elif score == "squared_error":
-            self._get_score = lambda cpt_count: (cpt_count - self.target_cpts) ** 2
+            self._get_score = (
+                lambda detection_count: (detection_count - self.target_detections) ** 2
+            )
 
     def __call__(self, trial: optuna.Trial):
         detector = copy.deepcopy(self.detector)
@@ -86,17 +90,17 @@ class _Optuna_Penalty_Objective:
             log=True,
         )
         detector.get_penalty().scale = penalty_scale
-        changepoints = detector.fit_predict(self.x)
-        cpt_count = len(changepoints)
-        trial.set_user_attr("cpt_count", cpt_count)
-        return self._get_score(cpt_count)
+        detections = detector.fit_predict(self.x)
+        detection_count = len(detections)
+        trial.set_user_attr("detection_count", detection_count)
+        return self._get_score(detection_count)
 
 
 class GridPenaltyTuner(BasePenaltyTuner):
     def __init__(
         self,
         detector: ChangeDetector,
-        target_cpts: int,
+        target_detections: int,
         penalty_scales: list = None,
         score="abs_error",
         interpolate=True,
@@ -104,7 +108,7 @@ class GridPenaltyTuner(BasePenaltyTuner):
         refit=True,
     ):
         super().__init__(detector)
-        self.target_cpts = target_cpts
+        self.target_detections = target_detections
         self.penalty_scales = penalty_scales
         self.score = score
         self.interpolate = interpolate
@@ -114,13 +118,13 @@ class GridPenaltyTuner(BasePenaltyTuner):
     def _summarise(self) -> pd.DataFrame:
         trials = self.study.trials
         penalty_scales = [trial.params["penalty_scale"] for trial in trials]
-        cpt_count = [trial.user_attrs["cpt_count"] for trial in trials]
+        detection_count = [trial.user_attrs["detection_count"] for trial in trials]
         scores = [trial.values[0] for trial in trials]
         default_penalty = self.detector.get_penalty().default_penalty()
         summary = {
             "penalty": [scale * default_penalty for scale in penalty_scales],
             "penalty_scale": penalty_scales,
-            "cpt_count": cpt_count,
+            "detection_count": detection_count,
             self.score: scores,
         }
         return summary
@@ -129,14 +133,14 @@ class GridPenaltyTuner(BasePenaltyTuner):
         summary = pd.DataFrame(self._summarise())
         summary = summary.sort_values("penalty_scale").reset_index(drop=True)
         unique_summary = (
-            summary.groupby("cpt_count")
+            summary.groupby("detection_count")
             .apply(lambda x: x.iloc[x.penalty_scale.argmin()])
-            .drop("cpt_count", axis=1)
+            .drop("detection_count", axis=1)
         )
-        min_cpts = summary.cpt_count.min()
-        max_cpts = summary.cpt_count.max()
+        min_detections = summary.detection_count.min()
+        max_detections = summary.detection_count.max()
         columns = unique_summary.columns
-        index = np.arange(min_cpts, max_cpts + 1)
+        index = np.arange(min_detections, max_detections + 1)
         interpolated_summary = pd.DataFrame(columns=columns, index=index)
         for column in unique_summary.columns:
             interpolated_summary[column] = unique_summary[column]
@@ -144,14 +148,14 @@ class GridPenaltyTuner(BasePenaltyTuner):
         return interpolated_summary
 
     def fit(self, x: pd.DataFrame) -> "GridPenaltyTuner":
-        if x.shape[0] < self.target_cpts:
-            raise ValueError("x must contain more rows than max_cpts.")
+        if x.shape[0] < self.target_detections:
+            raise ValueError("x must contain more rows than max_detections.")
         if self.penalty_scales is None:
             data_scale = x.std().mean()
             self.penalty_scales = data_scale * np.geomspace(1e-3, 1e3, 100)
 
         self.objective = _Optuna_Penalty_Objective(
-            self.target_cpts,
+            self.target_detections,
             self.detector,
             x,
             self.score,

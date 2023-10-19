@@ -117,7 +117,7 @@ class AMOCPenaltyTuner(BasePenaltyTuner):
     detector :
         WindowSegmentor to tune.
 
-    target_cpts:
+    target_detections:
         Target number of changepoints to be detected in the training data.
 
     """
@@ -125,7 +125,7 @@ class AMOCPenaltyTuner(BasePenaltyTuner):
     def __init__(
         self,
         detector: WindowSegmentor,
-        target_cpts: int = 1,
+        target_detections: int = 1,
         interval_generator="dyadic",
         prob: float = 0.1,
         step: int = 5,
@@ -134,7 +134,7 @@ class AMOCPenaltyTuner(BasePenaltyTuner):
         selector: Callable = targetscaler(alpha=1.0),
     ):
         self.detector = detector
-        self.target_cpts = target_cpts
+        self.target_detections = target_detections
         self.interval_generator = interval_generator
         self.prob = prob
         self.step = step
@@ -179,9 +179,9 @@ class AMOCPenaltyTuner(BasePenaltyTuner):
         scores, cpts = self._detect_in(starts, ends)
         self.scores = scores
         self.cpts = cpts
-        penalties = np.zeros(self.target_cpts)
+        penalties = np.zeros(self.target_detections)
         i = 0
-        while (i < self.target_cpts) & np.any(scores > 0.0):
+        while (i < self.target_detections) & np.any(scores > 0.0):
             argmax = scores.argmax()
             penalties[i] = scores[argmax]
             max_cpt = cpts[argmax]
@@ -191,8 +191,8 @@ class AMOCPenaltyTuner(BasePenaltyTuner):
         return penalties
 
     def fit(self, x: pd.DataFrame) -> "AMOCPenaltyTuner":
-        if x.shape[0] < self.target_cpts:
-            raise ValueError("x must contain more rows than target_cpts.")
+        if x.shape[0] < self.target_detections:
+            raise ValueError("x must contain more rows than target_detections.")
 
         if not x.index.is_monotonic_increasing:
             x = x.sort_index()
@@ -210,7 +210,7 @@ class AMOCPenaltyTuner(BasePenaltyTuner):
 
     def _summarise(self):
         results = {
-            "cpt_count": np.arange(self.target_cpts) + 1,
+            "detection_count": np.arange(self.target_detections) + 1,
             "penalty": self.penalties,
             "penalty_scale": self.penalties / self.detector.estimator.penalty.value,
         }
