@@ -1,9 +1,11 @@
 import abc
-from numbers import Number
-from typing import Tuple, Union, Callable
 import copy
-import pandas as pd
+from numbers import Number
 import numpy as np
+import pandas as pd
+from river.stats import Sum
+from river.utils import Rolling
+from typing import Tuple, Union, Callable
 
 from ..penalties import BasePenalty, ConstantPenalty
 
@@ -161,10 +163,6 @@ class LordenPollakScore(BaseRawScore):
     @property
     def changepoint(self):
         return self.n + 1
-
-
-from river.stats import Sum
-from river.utils import Rolling
 
 
 class CUSUM0Score(BaseRawScore):
