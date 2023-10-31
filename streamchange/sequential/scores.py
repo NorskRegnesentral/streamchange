@@ -139,7 +139,7 @@ class AggregatedScore(BaseRawScore):
 
 
 class LordenPollakScore(BaseRawScore):
-    def __init__(self, rho: Number):
+    def __init__(self, rho: Number = 1.0):
         self.rho = rho
         self.reset()
 
@@ -166,7 +166,7 @@ class LordenPollakScore(BaseRawScore):
 
 
 class CUSUM0Score(BaseRawScore):
-    def __init__(self, candidate_grid: list):
+    def __init__(self, candidate_grid: list = [2, 5, 10, 50, 100]):
         self.candidate_grid = candidate_grid
         self.weights = [1 / candidate for candidate in self.candidate_grid]
         self.reset()
