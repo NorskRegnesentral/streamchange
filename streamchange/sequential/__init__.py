@@ -6,6 +6,7 @@ from .scores import (
     PenalisedScore,
     AggregatedScore,
     LordenPollakScore,
+    CUSUM0Score,
 )
 from .penalty_tuners import SequentialScorePenaltyTuner
 
@@ -17,5 +18,6 @@ __all__ = [
     "PenalisedScore",
     "AggregatedScore",
     "LordenPollakScore",
+    "CUSUM0Score",
     "SequentialScorePenaltyTuner",
 ]
