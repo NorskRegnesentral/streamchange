@@ -8,6 +8,7 @@ import pandas as pd
 from .penalties import BasePenalty
 
 
+# TODO: Fix this relative to SequentialChangeDetector, Capa and Pelt.
 class ChangeDetector:
     def __init__(self):
         self.reset()
