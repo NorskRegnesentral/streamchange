@@ -111,7 +111,7 @@ class PenalisedScore(BasePenalisedScore):
 
 
 class AggregatedScore(BaseRawScore):
-    def __init__(self, base_score: BaseRawScore, aggregator: Callable = np.sum):
+    def __init__(self, base_score: BaseRawScore, aggregator: Callable = sum):
         self.base_score = base_score
         self.aggregator = aggregator
         self.reset()
@@ -124,11 +124,8 @@ class AggregatedScore(BaseRawScore):
     def _init_scores(self, x):
         self.scores = [copy.deepcopy(self.base_score) for _ in x]
 
-    def update(self, x):
-        if not isinstance(x, np.ndarray):
-            # Assumes x to be a number if it is not an array.
-            x = np.asarray([x])
-
+    def update(self, x: list):
+        # TODO: What should be expected input here? Dict as in river?
         if self.scores is None:
             self._init_scores(x)
 
