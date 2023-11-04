@@ -4,7 +4,6 @@ from streamchange.data import simulate
 from streamchange.sequential.scores import CUSUM0Score
 from streamchange.sequential import (
     AggregatedScore,
-    PenalisedScore,
     SequentialChangeDetector,
 )
 
@@ -22,7 +21,7 @@ score.fit(x)
 
 # Multivariate score
 x = simulate([0, 5, 0, 20], seg_lens=[100, 30, 100, 30], p=5)
-candidate_grid = [2, 5, 10, 20]
+candidate_grid = [2, 5, 10, 20, 50]
 base_score = CUSUM0Score(candidate_grid)
 score = AggregatedScore(base_score, aggregator=np.sum)
 penalised_score = score.penalise(100)
@@ -45,3 +44,19 @@ for cpt in detector.changepoints_:
     fig.add_vline(cpt, line_color="blue")
 fig.show()
 px.scatter(detector.penalised_scores_)
+
+from streamchange.utils import Profiler
+
+# Multivariate score, timing
+x = simulate([0], seg_lens=[10000], p=6)
+candidate_grid = [2000, 4000, 6000, 8000, 10000]
+base_score = CUSUM0Score(candidate_grid)
+score = AggregatedScore(base_score, aggregator=sum)
+penalised_score = score.penalise(100)
+detector = SequentialChangeDetector(
+    penalised_score, reset_on_change=True, restart_delay=400
+)
+profiler = Profiler()
+profiler.start()
+detector.fit(x)
+profiler.stop()
