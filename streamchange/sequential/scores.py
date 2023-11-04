@@ -8,6 +8,7 @@ from river.utils import Rolling
 from typing import Tuple, Union, Callable
 
 from ..penalties import BasePenalty, ConstantPenalty
+from ..segment_stats import MovingSum
 
 
 class BaseScore:
@@ -166,14 +167,14 @@ class LordenPollakScore(BaseRawScore):
 
 
 class CUSUM0Score(BaseRawScore):
-    def __init__(self, candidate_grid: list = [2, 5, 10, 50, 100]):
-        self.candidate_grid = candidate_grid
-        self.weights = [1 / candidate for candidate in self.candidate_grid]
+    def __init__(self, window_sizes: list = [2, 5, 10, 50, 100]):
+        self.window_sizes = window_sizes
+        self.weights = [1 / window_size for window_size in self.window_sizes]
         self.reset()
 
     def reset(self):
         self.sums = [
-            Rolling(Sum(), window_size=candidate) for candidate in self.candidate_grid
+            MovingSum(window_size=window_size) for window_size in self.window_sizes
         ]
         super().reset()
         return self
@@ -182,11 +183,11 @@ class CUSUM0Score(BaseRawScore):
         for s in self.sums:
             s.update(x)
 
-        self.cusum = [w * s.get() ** 2 for s, w in zip(self.sums, self.weights)]
+        self.cusum = [w * s.value**2 for s, w in zip(self.sums, self.weights)]
         self._score = max(self.cusum)
 
     def changepoint(self):
-        return self.candidate_grid[np.argmax(self.cusum)]
+        return self.window_sizes[np.argmax(self.cusum)]
 
 
 # from ..base import NumpyDeque
