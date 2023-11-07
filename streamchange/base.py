@@ -1,11 +1,45 @@
 import abc
 import copy
 from numbers import Number
-from typing import Union
+from typing import Union, Tuple
 import numpy as np
 import pandas as pd
+import river.base
 
 from .penalties import BasePenalty
+
+# TODO: What is the best way to deal with resets?
+#   - Resets in every class like now?
+#   - sklearn/river type "copy" method?
+
+# BaseDetector like river or sklearn. Maybe inherit from River? To clone etc.
+# Make a get_penalty function to get the penalty object from any detector, rather than
+# have a separate method for every class.
+#
+# Implements .update: Means the method can run online, takes number of dict.
+# Implements .fit: Convenience method for running .update over the data.
+# Implements .fit_fast: Convenience method for optimized fitting offline.
+#    - .fit or .fit_fast sets fit values by suffix "_", in particular
+#    - self.n_detections_, which is used for tuning.
+# Implements .transform: Means that the object can be used to transform input
+#      to other object of same length, like the sequential scoring objects.
+
+
+def get_penalty(detector: BaseDetector):
+    # Recursively look through detector's attribute to find a Penalty object
+
+    pass
+
+
+class BaseDetector(river.base.Base):
+    def update(self, x: Union[Number, dict]):
+        return self
+
+    def fit(self, x: pd.DataFrame):
+        return self
+
+    def fit_fast(self, x: pd.DataFrame):
+        return self
 
 
 # TODO: Fix this relative to SequentialChangeDetector, Capa and Pelt.
