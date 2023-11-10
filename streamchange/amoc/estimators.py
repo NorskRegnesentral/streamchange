@@ -23,6 +23,19 @@ def cusum_transform(x: np.ndarray, t: np.ndarray) -> np.ndarray:
 
 
 @njit
+def univariate_cusum0_transform(x: np.ndarray, t: np.ndarray) -> np.ndarray:
+    return np.cumsum(x)[t - 1] / np.sqrt(t)
+
+
+@njit
+def cusum0_transform(x: np.ndarray, t: np.ndarray) -> np.ndarray:
+    cusum0 = np.zeros((t.size, x.shape[1]))
+    for j in range(x.shape[1]):
+        cusum0[:, j] = univariate_cusum0_transform(x[:, j], t)
+    return cusum0
+
+
+@njit
 def _optim(cpt_scores: np.ndarray, t: np.ndarray):
     argmax = cpt_scores.argmax()
     return cpt_scores[argmax], t[argmax]
@@ -36,8 +49,15 @@ def optim_univariate_cusum(x: np.ndarray, t: np.ndarray):
 
 @njit
 def optim_univariate_cusum0(x: np.ndarray, t: np.ndarray):
-    sums = np.cumsum(x)
-    return _optim(sums[t - 1] ** 2 / t, t)
+    cusum0 = univariate_cusum0_transform(x, t)
+    return _optim(cusum0**2, t)
+
+
+@njit
+def optim_sum_cusum0(x: np.ndarray, t: np.ndarray):
+    cusum0 = cusum0_transform(x, t)
+    agg_cusum0 = (cusum0**2).sum(axis=1)
+    return _optim(agg_cusum0, t)
 
 
 @njit
@@ -165,6 +185,14 @@ class CUSUM0(SeparableAMOCEstimator):
     @staticmethod
     def _changepoint_optimiser(x, candidate_cpts):
         return optim_univariate_cusum0(x, candidate_cpts)
+
+
+class SumCUSUM0(SeparableAMOCEstimator):
+    _minsl_before = 0
+
+    @staticmethod
+    def _changepoint_optimiser(x, candidate_cpts):
+        return optim_sum_cusum0(x, candidate_cpts)
 
 
 class SumCUSUM(SeparableAMOCEstimator):
