@@ -3,8 +3,6 @@ import copy
 from numbers import Number
 import numpy as np
 import pandas as pd
-from river.stats import Sum
-from river.utils import Rolling
 from typing import Tuple, Union, Callable
 
 from ..penalties import BasePenalty, ConstantPenalty
@@ -125,7 +123,6 @@ class AggregatedScore(BaseRawScore):
         self.scores = [copy.deepcopy(self.base_score) for _ in x]
 
     def update(self, x: list):
-        # TODO: What should be expected input here? Dict as in river?
         if self.scores is None:
             self._init_scores(x)
 
@@ -134,6 +131,20 @@ class AggregatedScore(BaseRawScore):
 
         self._score = self.aggregator([score.value for score in self.scores])
         return self
+
+    # TODO: Dict implementation????
+    # def _init_scores(self, x: dict):
+    #     self.scores = {key: copy.deepcopy(self.base_score) for key, _ in x.items()}
+
+    # def update(self, x: dict):
+    #     if self.scores is None:
+    #         self._init_scores(x)
+
+    #     for key, value in x.items():
+    #         self.scores[key].update(value)
+
+    #     self._score = self.aggregator([score.value for score in self.scores])
+    #     return self
 
 
 class LordenPollakScore(BaseRawScore):
