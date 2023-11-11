@@ -1,4 +1,5 @@
 import numpy as np
+import pandas as pd
 import plotly.express as px
 from streamchange.data import simulate
 from streamchange.sequential.scores import CUSUM0Score
@@ -60,3 +61,22 @@ profiler = Profiler()
 profiler.start()
 detector.fit(x)
 profiler.stop()
+
+
+# Offline score
+from streamchange.offline.cusum0_score import fit_cusum0
+
+n = 1000000
+x = simulate([0], seg_lens=[n], p=6)
+# window_sizes = np.arange(2, 100)
+window_sizes = np.array([2000, 4000, 6000, 8000, 10000])
+
+scores = fit_cusum0(x.values, window_sizes)
+offline_scores = scores.sum(axis=1)
+offline_scores = pd.Series(offline_scores, index=x.index)
+
+base_score = CUSUM0Score(window_sizes.tolist())
+score = AggregatedScore(base_score, aggregator=sum)
+online_scores = score.fit(x).values_
+
+pd.concat([offline_scores, online_scores], axis=1)
