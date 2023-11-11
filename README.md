@@ -36,10 +36,13 @@ pip install git+https://github.com/NorskRegnesentral/streamchange
 - `pandas` >= 1.3
 - `numpy` >= 1.19
 - `numba` >= 0.56
-- `river` >= 0.14
-- `optuna` >= 3.1.1
 
 You also need Python >= 3.8. 
+
+Optional dependencies:
+- Online estimation of segment parameters: `river` >= 0.14
+- Penalty tuning: `optuna` >= 3.1.1
+
 
 ## License
 

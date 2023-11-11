@@ -1,5 +1,3 @@
-from river.stream import iter_pandas
-
 from streamchange.data import simulate
 from streamchange.capa import Capa, ConstMeanL2
 

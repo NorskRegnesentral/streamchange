@@ -28,6 +28,10 @@ class SequentialChangeDetector:
     def change_detected(self) -> bool:
         return self.penalised_score.value > 0
 
+    @property
+    def changepoint(self) -> int:
+        return self.penalised_score.changepoint
+
     def get_penalty(self):
         return self.penalised_score.penalty
 
@@ -49,14 +53,16 @@ class SequentialChangeDetector:
         times = x.index
 
         penalised_scores_ = []
-        alarm_indices = []
-        for t, x_t in enumerate(x.values):
+        self.alarms_ = []
+        self.changepoints_ = []
+        for t, x_t in zip(x.index, x.values):
             self.update(x_t)
             penalised_scores_.append(self.penalised_score.value)
             if self.change_detected:
-                alarm_indices.append(t)
+                self.alarms_.append(t)
+                if self.changepoint:
+                    self.changepoints_.append(self.changepoint)
         self.penalised_scores_ = pd.Series(penalised_scores_, index=times)
-        self.alarms_ = times[alarm_indices].tolist()
         return self
 
     def predict(self, x: pd.DataFrame = None) -> list:
@@ -67,3 +73,6 @@ class SequentialChangeDetector:
 
     def fit_predict(self, x: pd.DataFrame) -> list:
         return self.fit(x).predict()
+
+    def transform(self, x: pd.DataFrame) -> pd.Series:
+        return self.fit(x).penalised_scores_
