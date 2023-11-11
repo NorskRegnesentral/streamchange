@@ -80,3 +80,20 @@ score = AggregatedScore(base_score, aggregator=sum)
 online_scores = score.fit(x).values_
 
 pd.concat([offline_scores, online_scores], axis=1)
+
+# Offline detector
+from streamchange.offline.cusum0_score import aggcusum0_detect
+
+x = simulate([0, -5, 0, 20], seg_lens=[100, 30, 100, 30], p=10)
+
+window_sizes = np.array([2, 5, 10, 20])
+penalty = 100
+
+alarms, scores = aggcusum0_detect(x.values, penalty, window_sizes)
+
+base_score = CUSUM0Score(window_sizes.tolist())
+score = AggregatedScore(base_score, aggregator=sum).penalise(penalty)
+detector = SequentialChangeDetector(score, reset_on_change=True)
+detector.fit(x)
+print(detector.penalised_scores_)
+print(detector.alarms_)
