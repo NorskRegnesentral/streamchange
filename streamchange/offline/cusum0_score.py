@@ -19,7 +19,17 @@ def colcumsum(x: np.ndarray):
 
 
 @njit
-def fit_cusum0(x: np.ndarray, window_sizes: np.ndarray):
+def nb_sum(x: np.ndarray):
+    return np.sum(x)
+
+
+@njit
+def nb_max(x: np.ndarray):
+    return np.max(x)
+
+
+@njit
+def fit_cusum0_score(x: np.ndarray, window_sizes: np.ndarray, agg):
     x_original_shape = x.shape
     if x.ndim == 1:
         x = x.reshape(-1, 1)
@@ -30,18 +40,20 @@ def fit_cusum0(x: np.ndarray, window_sizes: np.ndarray):
     sums[1:] = colcumsum(x)
     weights = 1 / window_sizes.reshape(-1, 1)
 
-    scores = np.zeros_like(x)
+    scores = np.zeros(n)
     for i in range(1, n + 1):
         before_window_sums = sums[np.maximum(0, i - window_sizes)]
         partial_sums = sums[i] - before_window_sums
         cusums = weights * partial_sums**2
-        scores[i - 1] = colmax(cusums)
+        max_cusums = colmax(cusums)
+        score = agg(max_cusums)
+        scores[i - 1] = score
 
-    return scores.reshape(x_original_shape)
+    return scores
 
 
 @njit
-def aggcusum0_detect(x: np.ndarray, penalty: float, window_sizes: np.ndarray):
+def fit_cusum0_detector(x: np.ndarray, penalty: float, window_sizes: np.ndarray, agg):
     if x.ndim == 1:
         x = x.reshape(-1, 1)
     n = x.shape[0]

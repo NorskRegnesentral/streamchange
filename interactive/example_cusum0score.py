@@ -64,15 +64,14 @@ profiler.stop()
 
 
 # Offline score
-from streamchange.offline.cusum0_score import fit_cusum0
+from streamchange.offline.cusum0_score import fit_cusum0_score, nb_sum
 
-n = 1000000
+n = 100000
 x = simulate([0], seg_lens=[n], p=6)
 # window_sizes = np.arange(2, 100)
 window_sizes = np.array([2000, 4000, 6000, 8000, 10000])
 
-scores = fit_cusum0(x.values, window_sizes)
-offline_scores = scores.sum(axis=1)
+offline_scores = fit_cusum0_score(x.values, window_sizes, nb_sum)
 offline_scores = pd.Series(offline_scores, index=x.index)
 
 base_score = CUSUM0Score(window_sizes.tolist())
