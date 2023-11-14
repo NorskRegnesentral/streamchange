@@ -25,21 +25,22 @@ from .penalties import BasePenalty
 #      to other object of same length, like the sequential scoring objects.
 
 
-def get_penalty(detector: BaseDetector):
-    # Recursively look through detector's attribute to find a Penalty object
 
-    pass
+# class BaseDetector(river.base.Base):
+#     def update(self, x: Union[Number, dict]):
+#         return self
 
+#     def fit(self, x: pd.DataFrame):
+#         return self
 
-class BaseDetector(river.base.Base):
-    def update(self, x: Union[Number, dict]):
-        return self
+#     def fit_fast(self, x: pd.DataFrame):
+#         return self
 
-    def fit(self, x: pd.DataFrame):
-        return self
+# def get_penalty(detector: BaseDetector):
+#     # Recursively look through detector's attribute to find a Penalty object
 
-    def fit_fast(self, x: pd.DataFrame):
-        return self
+#     pass
+
 
 
 # TODO: Fix this relative to SequentialChangeDetector, Capa and Pelt.

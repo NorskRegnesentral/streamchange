@@ -66,7 +66,7 @@ profiler.stop()
 # Offline score
 from streamchange.offline.cusum0_score import fit_cusum0_score, nb_sum
 
-n = 100000
+n = 1000000
 x = simulate([0], seg_lens=[n], p=6)
 # window_sizes = np.arange(2, 100)
 window_sizes = np.array([2000, 4000, 6000, 8000, 10000])
@@ -81,18 +81,27 @@ online_scores = score.fit(x).values_
 pd.concat([offline_scores, online_scores], axis=1)
 
 # Offline detector
-from streamchange.offline.cusum0_score import aggcusum0_detect
+from streamchange.offline.cusum0_score import fit_cusum0_detector
 
 x = simulate([0, -5, 0, 20], seg_lens=[100, 30, 100, 30], p=10)
 
 window_sizes = np.array([2, 5, 10, 20])
 penalty = 100
+restart_delay = 20
 
-alarms, scores = aggcusum0_detect(x.values, penalty, window_sizes)
+alarms, scores = fit_cusum0_detector(
+    x.values, penalty, window_sizes, restart_delay=restart_delay
+)
 
 base_score = CUSUM0Score(window_sizes.tolist())
 score = AggregatedScore(base_score, aggregator=sum).penalise(penalty)
-detector = SequentialChangeDetector(score, reset_on_change=True)
+detector = SequentialChangeDetector(
+    score, reset_on_change=True, restart_delay=restart_delay
+)
 detector.fit(x)
 print(detector.penalised_scores_)
 print(detector.alarms_)
+
+pd.concat([pd.Series(scores, index=x.index), detector.penalised_scores_], axis=1).plot(
+    backend="plotly"
+)

@@ -1,3 +1,4 @@
+from typing import Callable
 import numpy as np
 from numba import njit
 
@@ -29,8 +30,7 @@ def nb_max(x: np.ndarray):
 
 
 @njit
-def fit_cusum0_score(x: np.ndarray, window_sizes: np.ndarray, agg):
-    x_original_shape = x.shape
+def fit_cusum0_score(x: np.ndarray, window_sizes: np.ndarray, agg: Callable = nb_sum):
     if x.ndim == 1:
         x = x.reshape(-1, 1)
     n = x.shape[0]
@@ -46,14 +46,19 @@ def fit_cusum0_score(x: np.ndarray, window_sizes: np.ndarray, agg):
         partial_sums = sums[i] - before_window_sums
         cusums = weights * partial_sums**2
         max_cusums = colmax(cusums)
-        score = agg(max_cusums)
-        scores[i - 1] = score
+        scores[i - 1] = agg(max_cusums)
 
     return scores
 
 
 @njit
-def fit_cusum0_detector(x: np.ndarray, penalty: float, window_sizes: np.ndarray, agg):
+def fit_cusum0_detector(
+    x: np.ndarray,
+    penalty: float,
+    window_sizes: np.ndarray,
+    agg: Callable = nb_sum,
+    restart_delay: int = 0,
+):
     if x.ndim == 1:
         x = x.reshape(-1, 1)
     n = x.shape[0]
@@ -63,17 +68,23 @@ def fit_cusum0_detector(x: np.ndarray, penalty: float, window_sizes: np.ndarray,
     sums[1:] = colcumsum(x)
     weights = 1 / window_sizes.reshape(-1, 1)
 
+    restart_counter = 0
     scores = np.zeros(n)
     alarms = [-1]
     for i in range(1, n + 1):
-        before_window_sums = sums[np.maximum(alarms[-1] + 1, i - window_sizes)]
+        if restart_counter < restart_delay:
+            restart_counter += 1
+            continue
+
+        prev_restart = alarms[-1] + restart_counter + 1
+        before_window_sums = sums[np.maximum(prev_restart, i - window_sizes)]
         partial_sums = sums[i] - before_window_sums
         cusums = weights * partial_sums**2
         max_cusums = colmax(cusums)
-        score = np.sum(max_cusums)
-        scores[i - 1] = score
+        scores[i - 1] = agg(max_cusums)
 
-        if score > penalty:
+        if scores[i - 1] > penalty:
             alarms.append(i - 1)
+            restart_counter = 0
 
     return alarms[1:], scores
